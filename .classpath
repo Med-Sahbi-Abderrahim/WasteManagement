@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry excluding="test/java/|main/java/" kind="src" path="backend/src"/>
+	<classpathentry kind="src" path="backend/src/main/java"/>
+	<classpathentry kind="src" path="backend/src/test/java"/>
+	<classpathentry kind="lib" path="backend/gradle/wrapper/gradle-wrapper.jar"/>
+	<classpathentry kind="lib" path="C:/Users/clubi/Downloads/apache-tomcat-9.0.102/apache-tomcat-9.0.102/lib/catalina.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="https://tomcat.apache.org/tomcat-9.0-doc/api/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/clubi/Downloads/apache-tomcat-9.0.102/apache-tomcat-9.0.102/lib/ecj-4.20.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="https://tomcat.apache.org/tomcat-9.0-doc/api/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="output" path="backend/build/classes/java/main"/>
+</classpath>
