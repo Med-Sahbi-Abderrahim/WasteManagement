@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<items>
+    <item xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="collectionPoint">
+        <id>1</id>
+        <name>Main Street Bin 1</name>
+        <localisation>Downtown1</localisation>
+        <wasteType>Plastic</wasteType>
+        <fillLevel>20.5</fillLevel>
+        <status>Active</status>
+    </item>
+    <item xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="collectionPoint">
+        <id>2</id>
+        <name>Main Street Bin</name>
+        <localisation>123 Main Street, Cityville</localisation>
+        <wasteType>Plastic</wasteType>
+        <fillLevel>45.5</fillLevel>
+        <status>Active</status>
+    </item>
+</items>

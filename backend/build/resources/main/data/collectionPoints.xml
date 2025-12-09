@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<pointsCollecte>
+    <pointCollecte>
+        <id>1</id>
+        <localisation>123 Main Street, Cityville</localisation>
+        <niveauRemplissage>37.0</niveauRemplissage>
+        <etatConteneur>ACTIF</etatConteneur>
+        <DateDerniereCollecte>2025-12-06T11:13:53.320+01:00</DateDerniereCollecte>
+        <typeDechet>
+            <id>1</id>
+            <nom>PLASTIQUE</nom>
+        </typeDechet>
+        <latitude>34.7406</latitude>
+        <longitude>10.7603</longitude>
+        <capacite>500</capacite>
+        <modele>Standard</modele>
+    </pointCollecte>
+    <pointCollecte>
+        <id>2</id>
+        <localisation>456 Oak Avenue, Downtown</localisation>
+        <niveauRemplissage>65.5</niveauRemplissage>
+        <etatConteneur>ACTIF</etatConteneur>
+        <DateDerniereCollecte>2025-12-05T09:30:00.000+01:00</DateDerniereCollecte>
+        <typeDechet>
+            <id>2</id>
+            <nom>VERRE</nom>
+        </typeDechet>
+        <latitude>34.7500</latitude>
+        <longitude>10.7700</longitude>
+        <capacite>300</capacite>
+        <modele>EcoBin</modele>
+    </pointCollecte>
+</pointsCollecte>

@@ -1,0 +1,54 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+    <xs:element name="Tournees">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="Tournee" type="Tournee" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:complexType name="Utilisateur">
+        <xs:sequence>
+            <xs:element name="id" type="xs:int"/>
+            <xs:element name="nom" type="xs:string"/>
+            <xs:element name="prenom" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="Vehicule">
+        <xs:sequence>
+            <xs:element name="id" type="xs:int"/>
+            <xs:element name="immatriculation" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="PointCollecte">
+        <xs:sequence>
+            <xs:element name="id" type="xs:int"/>
+            <xs:element name="localisation" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="RapportTournee">
+        <xs:sequence>
+            <xs:element name="id" type="xs:int"/>
+            <xs:element name="dateGeneration" type="xs:date"/>
+            <xs:element name="quantiteCollectee" type="xs:float"/>
+            <xs:element name="emissionsCO2" type="xs:float"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="Tournee">
+        <xs:sequence>
+            <xs:element name="id" type="xs:int"/>
+            <xs:element name="datePlanifiee" type="xs:date"/>
+            <xs:element name="statut" type="xs:string"/>
+            <xs:element name="employe" type="Utilisateur"/>
+            <xs:element name="vehicule" type="Vehicule"/>
+            <xs:element name="rapport" type="RapportTournee" minOccurs="0"/>
+            <xs:element name="pointsCollecte" type="PointCollecte" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+</xs:schema>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<utilisateurs>
+    <admin>
+        <id>1</id>
+        <mail>admin@ecoville.tn</mail>
+        <nom>Admin</nom>
+        <prenom>Municipal</prenom>
+        <telephone>20123456</telephone>
+        <password>1234</password>
+        <role>ADMIN</role>
+    </admin>
+    <superviseurZone>
+        <id>2</id>
+        <mail>superviseur@ecoville.tn</mail>
+        <nom>Superviseur</nom>
+        <prenom>Général</prenom>
+        <telephone>20987654</telephone>
+        <password>1234</password>
+        <role>SUPERVISEUR</role>
+    </superviseurZone>
+    <technicien>
+        <id>3</id>
+        <mail>technicien@ecoville.tn</mail>
+        <nom>Jean</nom>
+        <prenom>Technicien</prenom>
+        <telephone>21234567</telephone>
+        <password>1234</password>
+        <role>TECHNICIEN</role>
+    </technicien>
+    <employe>
+        <id>4</id>
+        <mail>employe@ecoville.tn</mail>
+        <nom>Ahmed</nom>
+        <prenom>Employé</prenom>
+        <telephone>22345678</telephone>
+        <password>1234</password>
+        <role>EMPLOYE</role>
+        <disponible>false</disponible>
+    </employe>
+</utilisateurs>

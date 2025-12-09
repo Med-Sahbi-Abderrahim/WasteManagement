@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<items>
+    <item xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="employee">
+        <id>0</id>
+        <telephone>0</telephone>
+        <role>string</role>
+        <disponible>true</disponible>
+    </item>
+    <item xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="employee">
+        <id>1</id>
+        <mail>dzdzdz@hshs.tg</mail>
+        <nom>azsazs</nom>
+        <prenom>vyvyuuv</prenom>
+        <telephone>2541251</telephone>
+        <role>EMPLOYE</role>
+        <disponible>true</disponible>
+    </item>
+    <item xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="employee">
+        <id>2</id>
+        <mail>mohammed.bhbh@wastemanagement.com</mail>
+        <nom>bhbh</nom>
+        <prenom>Mohammed</prenom>
+        <telephone>1000000000</telephone>
+        <role>EMPLOYE</role>
+        <disponible>true</disponible>
+    </item>
+</items>

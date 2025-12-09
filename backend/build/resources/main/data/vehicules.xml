@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<vehicules>
+    <vehicule>
+        <id>1</id>
+        <typeVehicule>Camion</typeVehicule>
+        <capacite>5000.0</capacite>
+        <disponibilite>true</disponibilite>
+        <immatriculation>TN-123-AB</immatriculation>
+        <etat>DISPONIBLE</etat>
+        <statut>DISPONIBLE</statut>
+    </vehicule>
+    <vehicule>
+        <id>2</id>
+        <typeVehicule>Benne</typeVehicule>
+        <capacite>3000.0</capacite>
+        <disponibilite>false</disponibilite>
+        <immatriculation>TN-456-CD</immatriculation>
+        <etat>EN_MISSION</etat>
+        <statut>EN_MISSION</statut>
+    </vehicule>
+</vehicules>

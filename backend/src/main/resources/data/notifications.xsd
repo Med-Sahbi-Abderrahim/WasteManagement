@@ -1,0 +1,28 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+    <xs:element name="Notifications">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="Notification" type="Notification" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    
+    <xs:complexType name="PointCollecte">
+        <xs:sequence>
+            <xs:element name="id" type="xs:int"/>
+            <xs:element name="localisation" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="Notification">
+        <xs:sequence>
+            <xs:element name="id" type="xs:int"/>
+            <xs:element name="date" type="xs:date"/>
+            <xs:element name="message" type="xs:string"/>
+            <xs:element name="type" type="xs:string"/>
+            <xs:element name="pointCollecte" type="PointCollecte"/>
+        </xs:sequence>
+    </xs:complexType>
+
+</xs:schema>

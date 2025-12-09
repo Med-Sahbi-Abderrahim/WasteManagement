@@ -1,0 +1,49 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '4.0.0' 
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.urbanwaste'
+version = '0.0.1-SNAPSHOT'
+description = 'WasteManagment'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(22) // KEEP: Required for Spring Framework 7
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+    // Spring Boot Web Starter - Includes core, web, tomcat, etc.
+	implementation 'org.springframework.boot:spring-boot-starter-web' 
+    
+    // Explicitly adding Spring Boot Core to ensure Spring Context (e.g., @Autowired) resolves correctly
+    implementation 'org.springframework.boot:spring-boot-starter' 
+
+    // FIX 1: Explicitly include the Jakarta Annotation API to help resolve JAXB and context issues
+    implementation 'jakarta.annotation:jakarta.annotation-api:2.1.1' 
+
+    // JAKARTA & XML Binding Dependencies
+    implementation 'jakarta.xml.bind:jakarta.xml.bind-api:4.0.0'
+    // FIX 2: Updated JAXB runtime to the latest 4.0.x version for compatibility
+	implementation 'org.glassfish.jaxb:jaxb-runtime:4.0.4' 
+    
+    // API Documentation
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0'
+
+    // Jackson XML (Needed for XML requests/responses)
+	implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml'
+	
+    // Testing
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
