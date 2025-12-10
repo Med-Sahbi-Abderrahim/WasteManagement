@@ -6,8 +6,8 @@
         <capacite>5000.0</capacite>
         <disponibilite>true</disponibilite>
         <immatriculation>TN-123-AB</immatriculation>
-        <etat>DISPONIBLE</etat>
         <statut>DISPONIBLE</statut>
+        <etat>DISPONIBLE</etat>
     </vehicule>
     <vehicule>
         <id>2</id>
@@ -15,7 +15,16 @@
         <capacite>3000.0</capacite>
         <disponibilite>false</disponibilite>
         <immatriculation>TN-456-CD</immatriculation>
-        <etat>EN_MISSION</etat>
         <statut>EN_MISSION</statut>
+        <etat>EN_MISSION</etat>
+    </vehicule>
+    <vehicule>
+        <id>3</id>
+        <typeVehicule>truck</typeVehicule>
+        <capacite>250.0</capacite>
+        <disponibilite>true</disponibilite>
+        <immatriculation>125TN125</immatriculation>
+        <statut>DISPONIBLE</statut>
+        <etat>DISPONIBLE</etat>
     </vehicule>
 </vehicules>

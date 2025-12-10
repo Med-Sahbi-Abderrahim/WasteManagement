@@ -1,275 +1,256 @@
 // src/components/dashboard/EmployeeDashboard.tsx
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useWasteStore } from '../../store/wasteStore';
-import {
-  Wrench,
-  Radio,
-  Truck,
-  Clock,
-  AlertTriangle,
-  X,
-  Send,
-  Check,
-  Bell,
-  MessageCircle,
-} from 'lucide-react';
-
-interface Point {
-  id: string;
-  lieu: string;
-  heure: string;
-  remplissage: number;
-  collecte: boolean;
-  incident: boolean;
-}
+import { useAuthStore } from '../../store/authStore';
+import { Flame, AlertTriangle, MapPin, Check, Play, StopCircle } from 'lucide-react';
+import api from '../../services/api';
 
 export const EmployeeDashboard: React.FC = () => {
-  const { employes, notifications, addNotification } = useWasteStore();
-  const employe = employes[0]; // employé connecté
+  const {
+    tournees,
+    points,
+    fetchTournees,
+    fetchPoints,
+    updatePoint,
+    updateTourneeStatut,
+  } = useWasteStore();
+  const { user } = useAuthStore();
 
-  const [points, setPoints] = useState<Point[]>([
-    { id: 'P01', lieu: 'Rue Habib Bourguiba', heure: '07:45', remplissage: 85, collecte: false, incident: false },
-    { id: 'P02', lieu: 'Av. Farhat Hached',   heure: '08:10', remplissage: 95, collecte: false, incident: false },
-    { id: 'P03', lieu: 'Rue de Tunis',        heure: '08:35', remplissage: 45, collecte: false, incident: false },
-    { id: 'P04', lieu: 'Route de Teniour',    heure: '09:00', remplissage: 70, collecte: false, incident: false },
-    { id: 'P05', lieu: 'Cité El Bahri',       heure: '09:25', remplissage: 30, collecte: false, incident: false },
-  ]);
+  const [selectedTour, setSelectedTour] = useState<any | null>(null);
+  const [showIncident, setShowIncident] = useState<boolean>(false);
+  const [incidentMsg, setIncidentMsg] = useState('');
+  const [incidentType, setIncidentType] = useState('DEBORDEMENT');
 
-  const [showIncident, setShowIncident] = useState<string | null>(null);
-  const [message, setMessage] = useState('');
-  const [showNotifs, setShowNotifs] = useState(false);
+  useEffect(() => {
+    fetchTournees();
+    if (points.length === 0) fetchPoints();
+  }, []);
 
-  // Stats
-  const collectes = points.filter(p => p.collecte).length;
-  const incidents = points.filter(p => p.incident).length;
+  const myTours = useMemo(() => {
+    if (!user) return [];
+    return tournees.filter(t => (t.employeIds || []).includes(String(user.id)));
+  }, [tournees, user]);
 
-  // Notifications reçues par cet employé
-  const mesNotifs =
-    notifications?.filter(
-      n => n.destinataire === 'TOUS' || n.destinataire === 'EQUIPE'
-    ) || [];
+  const sortedTours = useMemo(() => {
+    const enCours = myTours.filter(t => t.statut === 'EN_COURS');
+    const others = myTours.filter(t => t.statut !== 'EN_COURS');
+    return [...enCours, ...others];
+  }, [myTours]);
 
-  const notifsNonLues = mesNotifs.filter(n => !n.lu).length;
+  const missionPoints = useMemo(() => {
+    if (!selectedTour) return [];
+    return (selectedTour.pointsCollecteIds || [])
+      .map((id: any) => points.find(p => String(p.id) === String(id)))
+      .filter(Boolean);
+  }, [selectedTour, points]);
 
-  // Valider un point
-  const validerPoint = (id: string) => {
-    setPoints(prev =>
-      prev.map(p =>
-        p.id === id ? { ...p, collecte: true, remplissage: 0, incident: false } : p
-      )
-    );
+  const handleDemarrer = async (tour: any) => {
+    if (!updateTourneeStatut) return;
+    await updateTourneeStatut(tour.id, 'EN_COURS');
+    await fetchTournees();
   };
 
-  // Signaler un incident
-  const signalerIncident = () => {
-    if (!message.trim() || !showIncident) return;
+  const handleTerminer = async (tour: any) => {
+    if (!updateTourneeStatut) return;
+    await updateTourneeStatut(tour.id, 'TERMINEE');
+    await fetchTournees();
+  };
 
-    const point = points.find(p => p.id === showIncident);
+  const handleVider = async (pointId: string | number) => {
+    try {
+      await updatePoint(Number(pointId), { niveauRemplissage: 0 });
+      await fetchPoints();
+    } catch (e) {
+      console.error('Failed to vider point', e);
+    }
+  };
 
-    // Marquer le point en incident
-    setPoints(prev =>
-      prev.map(p => (p.id === showIncident ? { ...p, incident: true } : p))
-    );
-
-    // Envoyer au technicien
-    addNotification?.({
-      titre: `Panne à réparer – Point ${showIncident}`,
-      message: `${message} → ${point?.lieu}`,
-      destinataire: 'TECHNICIEN',
-      priorite: 'URGENT',
-    });
-
-    // Réponse automatique
-    setTimeout(() => {
-      addNotification?.({
-        titre: 'Superviseur',
-        message: `Incident pris en charge au point ${point?.lieu}. Technicien en route.`,
-        destinataire: 'TOUS',
-        priorite: 'NORMAL',
+  const handleIncident = async () => {
+    if (!selectedTour || !user) return;
+    try {
+      await api.post('/signalements', {
+        type: incidentType,
+        description: incidentMsg || 'Incident signalé',
+        pointCollecteId: selectedTour.pointsCollecteIds?.[0] ? Number(selectedTour.pointsCollecteIds[0]) : null,
+        employeId: user.id,
       });
-    }, 2000);
+      setIncidentMsg('');
+      setShowIncident(false);
+      alert('Incident signalé');
+    } catch (e) {
+      console.error('Signalement error', e);
+      alert('Erreur lors du signalement');
+    }
+  };
 
-    setShowIncident(null);
-    setMessage('');
+  const renderStatusBadge = (statut: string) => {
+    const map: Record<string, string> = {
+      PLANIFIEE: 'bg-orange-500',
+      EN_COURS: 'bg-blue-600',
+      TERMINEE: 'bg-gray-500',
+    };
+    return (
+      <span className={`text-[10px] px-2 py-0.5 rounded-full text-white font-semibold ${map[statut] || 'bg-gray-400'}`}>
+        {statut}
+      </span>
+    );
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen text-xs pb-20">
-
-      {/* HEADER + CLOCHE */}
-      <div className="bg-white border-b px-4 py-3 flex justify-between items-center">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <Wrench size={22} /> Espace employé
-          </h2>
-          <p className="text-xs text-gray-500">Collecte des déchets</p>
-        </div>
-
-        <button onClick={() => setShowNotifs(true)} className="relative">
-          <Bell size={20} className="text-gray-700" />
-          {notifsNonLues > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
-              {notifsNonLues}
-            </span>
+    <div className="space-y-4">
+      <div className="bg-white rounded-2xl border p-4 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs text-gray-500">Mon planning</p>
+            <h2 className="text-lg font-bold text-gray-900">Missions assignées</h2>
+          </div>
+          {user && (
+            <div className="text-sm text-gray-600">
+              Chauffeur / Éboueur · ID {user.id}
+            </div>
           )}
-        </button>
-      </div>
-
-      {/* VEHICULE + STATS */}
-      <div className="bg-white px-4 py-3 border-b">
-        <div className="flex items-center gap-2 mb-3">
-          <Truck size={14} className="text-gray-600" />
-          <span className="font-medium">159 Tun 4567</span>
-          <span className="text-green-600 text-xs font-medium">• Opérationnel</span>
-        </div>
-
-        <div className="grid grid-cols-4 gap-3 text-center">
-          <div>
-            <p className="text-xl font-bold text-green-600">{collectes}</p>
-            <p className="text-gray-500 text-[10px]">Collectés</p>
-          </div>
-          <div>
-            <p className="text-xl font-bold text-red-600">{incidents}</p>
-            <p className="text-gray-500 text-[10px]">Signalements</p>
-          </div>
-          <div>
-            <p className="text-xl font-bold text-blue-600">{notifsNonLues}</p>
-            <p className="text-gray-500 text-[10px]">Notifications</p>
-          </div>
-          <div>
-            <p className="text-xl font-bold text-gray-800">{points.length}</p>
-            <p className="text-gray-500 text-[10px]">Total</p>
-          </div>
         </div>
       </div>
 
-      {/* LISTE DES POINTS */}
-      <div className="divide-y bg-white">
-        {points.map((p, i) => (
-          <div key={p.id} className="px-4 py-3 flex items-center justify-between">
-            <div className="flex-1">
-              <p className="font-medium text-gray-900">{i + 1}. {p.lieu}</p>
-              <div className="flex items-center gap-2 mt-1">
-                <Clock size={11} className="text-gray-500" />
-                <span className="text-gray-500">{p.heure}</span>
-              </div>
-
-              {/* Barre remplissage */}
-              <div className="mt-2">
-                <div className="flex justify-between text-xs mb-1">
-                  <span>Niveau</span>
-                  <span className={`font-bold ${p.remplissage > 90 ? 'text-red-600' : p.remplissage > 70 ? 'text-orange-600' : 'text-green-600'}`}>
-                    {p.remplissage}%
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className={`h-2 rounded-full transition-all ${
-                      p.remplissage > 90
-                        ? 'bg-red-500'
-                        : p.remplissage > 70
-                        ? 'bg-orange-500'
-                        : p.remplissage > 40
-                        ? 'bg-yellow-500'
-                        : 'bg-green-500'
-                    }`}
-                    style={{ width: `${p.remplissage}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 ml-4">
-              <button onClick={() => setShowIncident(p.id)} className="text-red-600 hover:text-red-700">
-                <AlertTriangle size={18} />
-              </button>
-
-              <button onClick={() => validerPoint(p.id)}>
-                {p.collecte ? (
-                  <Check size={18} className="text-green-600" />
-                ) : (
-                  <X size={18} className="text-red-600" />
-                )}
-              </button>
-            </div>
+      <div className="space-y-3">
+        {sortedTours.length === 0 && (
+          <div className="bg-white border rounded-xl p-4 text-sm text-gray-500">
+            Aucune mission assignée pour l’instant.
           </div>
-        ))}
-      </div>
+        )}
 
-      {/* FENÊTRE NOTIFICATIONS */}
-      {showNotifs && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-end">
-          <div className="bg-white w-full rounded-t-2xl p-5 max-h-[80vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-base flex items-center gap-2">
-                <MessageCircle size={18} /> Notifications
-              </h3>
-              <button onClick={() => setShowNotifs(false)}>
-                <X size={22} />
-              </button>
-            </div>
-
-            {mesNotifs.length === 0 ? (
-              <p className="text-center text-gray-500 py-10">Aucune notification</p>
-            ) : (
-              <div className="space-y-3">
-                {mesNotifs.map(n => (
-                  <div
-                    key={n.id}
-                    className={`p-3 rounded-lg border ${
-                      n.lu ? 'bg-gray-50' : 'bg-blue-50 border-blue-300'
-                    }`}
-                  >
-                    <p className="font-medium text-sm">{n.titre}</p>
-                    <p className="text-xs text-gray-600 mt-1">{n.message}</p>
-                    <p className="text-[10px] text-gray-400 mt-2">{n.date}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* FENÊTRE SIGNALEMENT */}
-      {showIncident && (
-        <div className="fixed inset-0 bg-black/60 flex items-end z-50">
-          <div className="bg-white w-full rounded-t-2xl p-5">
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="font-bold text-base">Signaler un problème</h3>
-              <button onClick={() => setShowIncident(null)}>
-                <X size={22} />
-              </button>
-            </div>
-
-            <textarea
-              value={message}
-              onChange={e => setMessage(e.target.value)}
-              placeholder="Bac cassé, accès bloqué, verre..."
-              className="w-full p-3 border rounded-lg h-28 text-xs resize-none"
-            />
-
-            <button
-              onClick={signalerIncident}
-              className="w-full mt-4 py-3 bg-red-600 text-white rounded-lg font-medium flex items-center justify-center gap-2"
+        {sortedTours.map((tour) => {
+          const isCurrent = tour.statut === 'EN_COURS';
+          return (
+            <div
+              key={tour.id}
+              className={`p-4 rounded-xl border cursor-pointer transition ${
+                isCurrent
+                  ? 'border-blue-500 bg-blue-50 shadow-md'
+                  : 'border-gray-200 bg-white hover:shadow'
+              }`}
+              onClick={() => setSelectedTour(tour)}
             >
-              <Send size={16} /> Envoyer au technicien
-            </button>
+              <div className="flex justify-between items-start">
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center gap-2">
+                    {renderStatusBadge(tour.statut)}
+                    {isCurrent && (
+                      <span className="text-xs text-blue-700 font-semibold flex items-center gap-1">
+                        <Flame size={12} /> Mission en cours
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-sm text-gray-800 font-semibold">Départ {tour.heureDebut || '--:--'}</div>
+                  <div className="text-xs text-gray-600">
+                    Véhicule: {tour.vehiculeId || '-'} · Points: {(tour.pointsCollecteIds || []).length} · Dist: {tour.distanceKm || '?'} km
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  {tour.statut === 'PLANIFIEE' && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDemarrer(tour); }}
+                      className="px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 flex items-center gap-1"
+                    >
+                      <Play size={14} /> Démarrer
+                    </button>
+                  )}
+                  {tour.statut === 'EN_COURS' && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleTerminer(tour); }}
+                      className="px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center gap-1"
+                    >
+                      <StopCircle size={14} /> Terminer
+                    </button>
+                  )}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setSelectedTour(tour); setShowIncident(true); }}
+                    className="px-3 py-1.5 text-xs font-semibold text-amber-700 bg-amber-100 rounded-lg hover:bg-amber-200 flex items-center gap-1"
+                  >
+                    <AlertTriangle size={14} /> Signaler
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {selectedTour && (
+        <div className="bg-white border rounded-xl p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-xs text-gray-500">Mission</p>
+              <h3 className="text-base font-semibold text-gray-900">Points à collecter</h3>
+            </div>
+            <span className="text-xs text-gray-500">Tournée #{selectedTour.id}</span>
+          </div>
+
+          <div className="space-y-2">
+            {missionPoints.length === 0 && (
+              <p className="text-sm text-gray-500">Aucun point associé.</p>
+            )}
+            {missionPoints.map((p: any, i: number) => (
+              <div key={p.id || i} className="border rounded-lg px-3 py-2 flex justify-between items-center">
+                <div>
+                  <div className="text-sm font-semibold text-gray-800 flex items-center gap-1">
+                    <MapPin size={14} className="text-emerald-600" /> {p.localisation || `Point ${p.id}`}
+                  </div>
+                  <div className="text-xs text-gray-500">Niveau: {p.niveauRemplissage}%</div>
+                </div>
+                <button
+                  onClick={() => handleVider(p.id)}
+                  className="px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 flex items-center gap-1"
+                >
+                  <Check size={14} /> Vider
+                </button>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
-      {/* TOURNÉES PRÉVUES */}
-      <div className="px-4 py-3 bg-white mt-4 border-t text-xs">
-        <p className="font-medium text-gray-700 mb-2">Tournées prévues</p>
-        <div className="space-y-2">
-          <div className="flex justify-between"><span>Aujourd’hui • 07:30</span><span className="text-green-600 font-medium">En cours</span></div>
-          <div className="flex justify-between text-gray-500"><span>Demain • 07:00</span><span>Planifiée</span></div>
-          <div className="flex justify-between text-gray-500"><span>Lundi • 06:45</span><span>Planifiée</span></div>
+      {showIncident && selectedTour && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-4">
+          <div className="bg-white rounded-2xl w-full max-w-md p-5 shadow-xl">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-base font-bold text-gray-900">Signaler un incident</h3>
+              <button onClick={() => setShowIncident(false)} className="text-gray-500">×</button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-gray-600 mb-1 block">Type</label>
+                <select
+                  value={incidentType}
+                  onChange={e => setIncidentType(e.target.value)}
+                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                >
+                  <option value="DEBORDEMENT">Débordement</option>
+                  <option value="DEGRADATION">Dégradation</option>
+                  <option value="ACCIDENT">Accident</option>
+                  <option value="PANNE_CAMION">Panne camion</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-gray-600 mb-1 block">Description</label>
+                <textarea
+                  value={incidentMsg}
+                  onChange={e => setIncidentMsg(e.target.value)}
+                  className="w-full border rounded-lg px-3 py-2 text-sm h-24 resize-none"
+                  placeholder="Décrivez le problème..."
+                />
+              </div>
+              <button
+                onClick={handleIncident}
+                className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-lg py-2.5 text-sm font-semibold flex items-center justify-center gap-2"
+              >
+                <AlertTriangle size={16} /> Envoyer le signalement
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-      
+      )}
     </div>
   );
 };

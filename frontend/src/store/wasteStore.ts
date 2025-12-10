@@ -4,6 +4,7 @@ import { employeesService } from '../services/employeesService';
 import { vehiclesService } from '../services/vehiclesService';
 import { Employe, Vehicule } from '../types/waste';
 import { generateEmployesXML, parseEmployesXML, generateVehiculesXML, parseVehiculesXML } from '../utils/xml';
+import api from '../services/api';
 
 interface PointCollecte {
   id: number;
@@ -52,6 +53,11 @@ interface WasteStore {
   updateVehicule: (id: string | number, updates: Partial<Vehicule>) => Promise<void>;
   removeVehicule: (id: string | number) => Promise<void>;
   exportVehiculesXML: () => void;
+  
+  // Tournees Actions
+  fetchTournees: () => Promise<void>;
+  addTournee: (tournee: any) => Promise<void>;
+  updateTourneeStatut?: (id: string, statut: 'PLANIFIEE' | 'EN_COURS' | 'TERMINEE' | string) => Promise<void>;
 }
 
 export const useWasteStore = create<WasteStore>((set, get) => ({
@@ -164,36 +170,41 @@ export const useWasteStore = create<WasteStore>((set, get) => ({
   
   addEmploye: async (employe) => {
     set({ isLoading: true, error: null });
+    
+    // Validate required fields
+    if (!employe.nom || !employe.prenom) {
+      set({ 
+        error: 'Nom and prenom are required', 
+        isLoading: false 
+      });
+      throw new Error('Nom and prenom are required');
+    }
+    
+    // Convert frontend Employe format to backend Utilisateur format
+    // Note: id must be 0 (backend will assign the actual ID)
+    // Note: disponible is not in Utilisateur base class, only in Employee subclass
+    const backendEmployee = {
+      id: 0, // Required field - backend will set the actual ID
+      mail: employe.email || `${employe.prenom.toLowerCase()}.${employe.nom.toLowerCase()}@wastemanagement.com`,
+      nom: employe.nom.trim(),
+      prenom: employe.prenom.trim(),
+      telephone: employe.telephone ? parseInt(employe.telephone.replace(/\D/g, '')) || 0 : 0,
+      role: employe.role === 'CHAUFFEUR' ? 'CHAUFFEUR' : employe.role === 'SUPERVISEUR' ? 'SUPERVISEUR' : 'EMPLOYE',
+      // Don't send disponible - it's not in Utilisateur, only in Employee subclass
+      // The backend will handle it if needed
+    };
+    
+    // Ensure telephone is not 0 (required field)
+    if (backendEmployee.telephone === 0) {
+      backendEmployee.telephone = 1000000000; // Default placeholder
+    }
+    
+    // Ensure mail is not empty (required field)
+    if (!backendEmployee.mail || backendEmployee.mail.trim() === '') {
+      backendEmployee.mail = `${backendEmployee.prenom.toLowerCase()}.${backendEmployee.nom.toLowerCase()}@wastemanagement.com`;
+    }
+    
     try {
-      // Validate required fields
-      if (!employe.nom || !employe.prenom) {
-        throw new Error('Nom and prenom are required');
-      }
-      
-      // Convert frontend Employe format to backend Utilisateur format
-      // Note: id must be 0 (backend will assign the actual ID)
-      // Note: disponible is not in Utilisateur base class, only in Employee subclass
-      const backendEmployee = {
-        id: 0, // Required field - backend will set the actual ID
-        mail: employe.email || `${employe.prenom.toLowerCase()}.${employe.nom.toLowerCase()}@wastemanagement.com`,
-        nom: employe.nom.trim(),
-        prenom: employe.prenom.trim(),
-        telephone: employe.telephone ? parseInt(employe.telephone.replace(/\D/g, '')) || 0 : 0,
-        role: employe.role === 'CHAUFFEUR' ? 'CHAUFFEUR' : employe.role === 'SUPERVISEUR' ? 'SUPERVISEUR' : 'EMPLOYE',
-        // Don't send disponible - it's not in Utilisateur, only in Employee subclass
-        // The backend will handle it if needed
-      };
-      
-      // Ensure telephone is not 0 (required field)
-      if (backendEmployee.telephone === 0) {
-        backendEmployee.telephone = 1000000000; // Default placeholder
-      }
-      
-      // Ensure mail is not empty (required field)
-      if (!backendEmployee.mail || backendEmployee.mail.trim() === '') {
-        backendEmployee.mail = `${backendEmployee.prenom.toLowerCase()}.${backendEmployee.nom.toLowerCase()}@wastemanagement.com`;
-      }
-      
       console.log('Sending employee data to backend:', backendEmployee);
       const created = await employeesService.create(backendEmployee);
       console.log('Employee created successfully:', created);
@@ -497,5 +508,198 @@ export const useWasteStore = create<WasteStore>((set, get) => ({
     a.download = 'vehicules.xml';
     a.click();
     URL.revokeObjectURL(url);
+  },
+  
+  // Tournees Actions
+  fetchTournees: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      console.log('[WasteStore] Fetching tournees from /api/routes...');
+      const response = await api.get('/routes');
+      const backendTournees = response.data || [];
+      
+      // Transform backend format to frontend format
+      const tournees = backendTournees.map((t: any) => ({
+        id: String(t.id),
+        date: t.datePlanifiee ? new Date(t.datePlanifiee).toISOString().split('T')[0] : '',
+        heureDebut: t.heureDebut || '',
+        heureFin: t.heureFin || '',
+        vehiculeId: t.vehicle ? String(t.vehicle.id) : '',
+        employeIds: t.employe ? [String(t.employe.id)] : [],
+        pointsCollecteIds: t.pointsCollecte ? t.pointsCollecte.map((p: any) => String(p.id)) : [],
+        statut: t.statut || 'PLANIFIEE',
+        distanceKm: t.distanceKm || 0,
+      }));
+      
+      console.log('[WasteStore] Tournees fetched successfully:', tournees);
+      set({ tournees, isLoading: false });
+    } catch (error: any) {
+      console.error('[WasteStore] Fetch Tournees API Error:', error);
+      set({ 
+        error: error.response?.data?.error || error.message || 'Failed to fetch tournees', 
+        isLoading: false 
+      });
+    }
+  },
+  
+  addTournee: async (tournee) => {
+    // Get current state to access vehicules and employes
+    const state = get();
+    
+    // Find the vehicle and employee objects
+    const vehicle = state.vehicules.find(v => String(v.id) === String(tournee.vehiculeId));
+    const firstEmployeeId = tournee.employeIds && tournee.employeIds.length > 0 ? tournee.employeIds[0] : null;
+    const employee = firstEmployeeId ? state.employes.find(e => String(e.id) === String(firstEmployeeId)) : null;
+    const points = state.points.filter(p => {
+      const pointIdStr = String(p.id);
+      const pointIdNum = p.id;
+      return tournee.pointsCollecteIds && (
+        tournee.pointsCollecteIds.includes(pointIdStr) || 
+        tournee.pointsCollecteIds.includes(pointIdNum)
+      );
+    });
+    
+    if (!vehicle) {
+      throw new Error('Vehicle not found');
+    }
+    if (!employee) {
+      throw new Error('Employee not found');
+    }
+    
+    // Transform frontend format to backend format
+    const backendTournee = {
+      id: 0, // Backend will assign
+      datePlanifiee: tournee.date ? new Date(tournee.date).toISOString() : new Date().toISOString(),
+      statut: tournee.statut || 'PLANIFIEE',
+      employe: {
+        id: Number(employee.id),
+        nom: employee.nom,
+        prenom: employee.prenom,
+      },
+      vehicle: {
+        id: Number(vehicle.id),
+        immatriculation: vehicle.immatriculation || '',
+      },
+      pointsCollecte: points.map(p => ({
+        id: p.id,
+        localisation: p.localisation,
+      })),
+      heureDebut: tournee.heureDebut || '',
+      heureFin: tournee.heureFin || '',
+      distanceKm: tournee.distanceKm || 0,
+    };
+    
+    // Optimistic update
+    const tempId = `temp-${Date.now()}`;
+    const optimisticTournee = { ...tournee, id: tempId };
+    set(state => ({ 
+      tournees: [...state.tournees, optimisticTournee], 
+      isLoading: true 
+    }));
+    
+    try {
+      console.log('[WasteStore] Creating tournee:', backendTournee);
+      const response = await api.post('/routes', backendTournee);
+      const createdBackendTournee = response.data;
+      console.log('[WasteStore] Tournee created successfully:', createdBackendTournee);
+      
+      // Transform backend response to frontend format
+      const createdTournee = {
+        id: String(createdBackendTournee.id),
+        date: createdBackendTournee.datePlanifiee ? new Date(createdBackendTournee.datePlanifiee).toISOString().split('T')[0] : tournee.date,
+        heureDebut: createdBackendTournee.heureDebut || tournee.heureDebut,
+        heureFin: createdBackendTournee.heureFin || tournee.heureFin,
+        vehiculeId: createdBackendTournee.vehicle ? String(createdBackendTournee.vehicle.id) : tournee.vehiculeId,
+        employeIds: createdBackendTournee.employe ? [String(createdBackendTournee.employe.id)] : tournee.employeIds,
+        pointsCollecteIds: createdBackendTournee.pointsCollecte ? createdBackendTournee.pointsCollecte.map((p: any) => String(p.id)) : tournee.pointsCollecteIds,
+        statut: createdBackendTournee.statut || tournee.statut,
+        distanceKm: createdBackendTournee.distanceKm || tournee.distanceKm,
+      };
+      
+      // Replace optimistic update with actual response
+      set(state => ({ 
+        tournees: state.tournees.map(t => t.id === tempId ? createdTournee : t), 
+        isLoading: false 
+      }));
+    } catch (error: any) {
+      console.error('[WasteStore] Create Tournee API Error:', error);
+      // Rollback optimistic update
+      set(state => ({ 
+        tournees: state.tournees.filter(t => t.id !== tempId),
+        error: error.response?.data?.error || error.message || 'Failed to create tournee', 
+        isLoading: false 
+      }));
+      throw error;
+    }
+  },
+
+  updateTourneeStatut: async (id, statut) => {
+    set({ isLoading: true, error: null });
+    try {
+      const state = get();
+      const existing = state.tournees.find(t => String(t.id) === String(id));
+      if (!existing) {
+        throw new Error('Tournee not found');
+      }
+
+      // Resolve related objects
+      const vehicule = state.vehicules.find(v => String(v.id) === String(existing.vehiculeId));
+      const employeId = (existing.employeIds || [])[0];
+      const employe = employeId ? state.employes.find(e => String(e.id) === String(employeId)) : null;
+      const pointsCollecte = state.points
+        .filter(p => existing.pointsCollecteIds?.includes(String(p.id)))
+        .map(p => ({
+          id: p.id,
+          localisation: p.localisation,
+        }));
+
+      const backendTournee = {
+        id: Number(id),
+        datePlanifiee: existing.date ? new Date(existing.date).toISOString() : new Date().toISOString(),
+        statut: statut,
+        employe: employe
+          ? {
+              id: Number(employe.id),
+              nom: employe.nom,
+              prenom: employe.prenom,
+            }
+          : null,
+        vehicle: vehicule
+          ? {
+              id: Number(vehicule.id),
+              immatriculation: vehicule.immatriculation || '',
+            }
+          : null,
+        pointsCollecte: pointsCollecte,
+        heureDebut: existing.heureDebut || '',
+        heureFin: existing.heureFin || '',
+        distanceKm: existing.distanceKm || 0,
+      };
+
+      const response = await api.put(`/routes/${id}`, backendTournee);
+      const updated = response.data || {};
+      set(state => ({
+        tournees: state.tournees.map(t =>
+          String(t.id) === String(id)
+            ? {
+                ...t,
+                statut: updated.statut || statut,
+                heureDebut: updated.heureDebut || t.heureDebut,
+                heureFin: updated.heureFin || t.heureFin,
+                employeIds: updated.employe ? [String(updated.employe.id)] : t.employeIds,
+                pointsCollecteIds: updated.pointsCollecte ? updated.pointsCollecte.map((p: any) => String(p.id)) : t.pointsCollecteIds,
+              }
+            : t
+        ),
+        isLoading: false,
+      }));
+    } catch (error: any) {
+      console.error('[WasteStore] Update Tournee Statut Error:', error);
+      set({
+        error: error.response?.data?.error || error.message || 'Failed to update tournee statut',
+        isLoading: false,
+      });
+      throw error;
+    }
   },
 }));

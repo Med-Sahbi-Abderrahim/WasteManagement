@@ -49,7 +49,7 @@ export const WasteDashboard: React.FC = () => {
           { icon: Truck, label: 'Tournées', path: '/app/routes' },
           { icon: Users, label: 'Employés', path: '/app/staff' },
           { icon: Truck, label: 'Véhicules', path: '/app/vehicles' },
-          { icon: AlertTriangle, label: 'Signalements', path: '/app/reports' },
+          { icon: AlertTriangle, label: 'Signalements', path: '/app/routes' },
           { icon: FileText, label: 'Rapports', path: '/app/activities' },
           { icon: Settings, label: 'Paramètres', path: '/app/settings' },
         ];
@@ -58,7 +58,7 @@ export const WasteDashboard: React.FC = () => {
           ...common,
           { icon: Truck, label: 'Suivi Tournées', path: '/app/routes' },
           { icon: Users, label: 'Coordination', path: '/app/staff' },
-          { icon: Bell, label: 'Alertes', path: '/app/reports' },
+          { icon: Bell, label: 'Signalements', path: '/app/routes' },
           { icon: FileText, label: 'Rapports Activité', path: '/app/activities' },
         ];
       case 'TECHNICIEN':
@@ -70,7 +70,7 @@ export const WasteDashboard: React.FC = () => {
       case 'EMPLOYE':
         return [
           ...common,
-          { icon: Truck, label: 'Mon Planning', path: '/app/routes' },
+          { icon: Truck, label: 'Mon planning', path: '/app/routes' },
         ];
       case 'CITOYEN':
         return [
@@ -176,7 +176,7 @@ export const WasteDashboard: React.FC = () => {
               </div>
             } />
             <Route path="/points" element={<CollectPointList />} />
-            <Route path="/routes" element={<TourManagement />} />
+            <Route path="/routes" element={user.role === 'EMPLOYE' ? <EmployeeDashboard /> : <TourManagement />} />
             <Route path="/staff" element={<StaffManagement />} />
             <Route path="/vehicles" element={<VehicleList />} />
             <Route path="/reports" element={<ReportList />} />

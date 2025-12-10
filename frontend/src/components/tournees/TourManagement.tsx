@@ -1,10 +1,11 @@
 // src/components/tournees/TourList.tsx
 // VERSION FINALE – CE QUE TU VOULAIS VRAIMENT VOIR
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useWasteStore } from '../../store/wasteStore';
-import { Download, Upload, Flame, Zap } from 'lucide-react';
+import { Download, Upload, Flame, Zap, Plus } from 'lucide-react';
 import { format } from 'date-fns';
+import { AddTourModal } from './AddTourModal';
 
 export const TourList: React.FC = () => {
   const { 
@@ -13,13 +14,33 @@ export const TourList: React.FC = () => {
     employes, 
     points,
     signalements,
-    addTournee, 
+    addTournee,
+    fetchTournees,
+    fetchVehicules,
+    fetchEmployes,
+    fetchPoints,
     exportTourneesXML,
     importTourneesXML 
   } = useWasteStore();
+  
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchTournees();
+    if (vehicules.length === 0) {
+      fetchVehicules();
+    }
+    if (employes.length === 0) {
+      fetchEmployes();
+    }
+    if (points.length === 0) {
+      fetchPoints();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [modeUrgenceActive, setModeUrgenceActive] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const getVehicule = (id: string) => vehicules.find(v => v.id === id);
   const getNom = (id: string) => {
@@ -29,13 +50,28 @@ export const TourList: React.FC = () => {
 
   // Détecte si tournée contient un point en débordement imminent
   const aUnPointEnFeu = (tournee: any) => {
-    return points.some(p => 
-      tournee.pointsCollecteIds.includes(p.id) && 
-      (p.niveauRemplissage >= 95 || signalements.some(s => s.pointCollecteId === p.id && s.statut === 'URGENT'))
-    );
+    if (!tournee.pointsCollecteIds || !Array.isArray(tournee.pointsCollecteIds)) return false;
+    return points.some(p => {
+      const pointIdStr = String(p.id);
+      const pointIdNum = p.id;
+      const hasPoint = tournee.pointsCollecteIds.includes(pointIdStr) || tournee.pointsCollecteIds.includes(pointIdNum);
+      if (!hasPoint) return false;
+      return p.niveauRemplissage >= 95 || signalements.some(s => String(s.pointCollecteId) === pointIdStr && s.statut === 'URGENT');
+    });
   };
 
   const estTourneeIA = (tournee: any) => tournee.id?.includes('ia-') || tournee.id?.includes('opt-');
+
+  const handleManualAdd = async (data: any) => {
+    try {
+      await addTournee(data);
+      setIsAddModalOpen(false);
+      // Refresh tournees list after adding
+      await fetchTournees();
+    } catch (error) {
+      console.error('Failed to add tournee:', error);
+    }
+  };
 
   // TRI : Normal avant clic → Intelligent après clic
   const tourneesTriees = useMemo(() => {
@@ -63,10 +99,13 @@ export const TourList: React.FC = () => {
     });
   }, [tournees, points, signalements, modeUrgenceActive]);
 
-  const lancerOptimisation = () => {
+  const lancerOptimisation = async () => {
     setIsOptimizing(true);
 
-    setTimeout(() => {
+    // Simulate AI processing delay
+    await new Promise(resolve => setTimeout(resolve, 3000));
+
+    try {
       const pointsEnFeu = points
         .filter(p => p.niveauRemplissage >= 92 || signalements.some(s => s.pointCollecteId === p.id && s.statut === 'URGENT'))
         .sort((a, b) => b.niveauRemplissage - a.niveauRemplissage);
@@ -78,27 +117,33 @@ export const TourList: React.FC = () => {
       let restants = [...pointsEnFeu];
       let creees = 0;
 
-      for (let i =0;  i < Math.min(4, vehDispo.length); i++) {
+      for (let i = 0; i < Math.min(4, vehDispo.length); i++) {
         if (restants.length < 2) break;
         const segment = restants.splice(0, Math.min(9, restants.length));
         const distance = Number((segment.length * 4.1 + 9).toFixed(1));
 
-        addTournee({
+        const nouvelleTournee = {
           date: format(new Date(), 'yyyy-MM-dd'),
           vehiculeId: vehDispo[i]?.id || '',
           employeIds: [
             chauffeurs[i % chauffeurs.length]?.id || '',
             ...eboueurs.slice(i * 2, i * 2 + 2).map(e => e.id)
           ].filter(Boolean),
-          pointsCollecteIds: segment.map(p => p.id),
+          pointsCollecteIds: segment.map(p => String(p.id)),
           statut: 'PLANIFIEE' as const,
           distanceKm: distance,
           heureDebut: ['06:15', '06:45', '07:15', '13:30'][i],
           heureFin: '',
-        });
+        };
+
+        // CRITICAL: Call addTournee for each AI-generated tour to save to backend
+        await addTournee(nouvelleTournee);
         creees++;
       }
 
+      // Refresh tournees list after AI optimization
+      await fetchTournees();
+      
       // ACTIVE LE MODE VISUEL + ANIMATION
       setModeUrgenceActive(true);
       setIsOptimizing(false);
@@ -106,7 +151,11 @@ export const TourList: React.FC = () => {
       if (creees > 0) {
         alert(`${creees} tournées d'urgence créées ! Regarde le déplacement`);
       }
-    }, 3000);
+    } catch (error) {
+      console.error('Error during AI optimization:', error);
+      setIsOptimizing(false);
+      alert('Erreur lors de la création des tournées optimisées');
+    }
   };
 
   return (
@@ -121,6 +170,13 @@ export const TourList: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap gap-2">
+          <button 
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex items-center gap-1 text-xs px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+          >
+            <Plus size={14} /> Ajouter
+          </button>
+          
           <button onClick={exportTourneesXML} className="flex items-center gap-1 text-xs px-3 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800">
             <Download size={14} /> Exporter XML
           </button>
@@ -151,11 +207,11 @@ export const TourList: React.FC = () => {
             }`}
           >
             {isOptimizing ? (
-              <>IA en cours...</>
+              <span>IA en cours...</span>
             ) : (
               <>
                 <Flame size={17} className="text-yellow-300" />
-                Intervention d'urgence IA
+                <span>Intervention d'urgence IA</span>
               </>
             )}
           </button>
@@ -164,7 +220,13 @@ export const TourList: React.FC = () => {
 
       {/* LISTE AVEC MOUVEMENT RÉEL + DESIGN INTELLIGENT */}
       <div className="space-y-3">
-        {tourneesTriees.map((tournee, index) => {
+        {tourneesTriees.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">
+            <p>Aucune tournée disponible</p>
+            <p className="text-sm mt-2">Cliquez sur "Ajouter" pour créer une nouvelle tournée</p>
+          </div>
+        ) : (
+          tourneesTriees.map((tournee, index) => {
           const veh = getVehicule(tournee.vehiculeId);
           const enFeu = modeUrgenceActive && aUnPointEnFeu(tournee);
           const ia = estTourneeIA(tournee);
@@ -210,8 +272,8 @@ export const TourList: React.FC = () => {
 
                   <div className="grid grid-cols-4 gap-2 text-[11px]">
                     <div><span className="text-gray-500">Camion</span><br /><b>{veh?.immatriculation || '-'}</b></div>
-                    <div><span className="text-gray-500">Équipe</span><br /><b>{tournee.employeIds.map(getNom).join(', ')}</b></div>
-                    <div><span className="text-gray-500">Pts</span><br /><b>{tournee.pointsCollecteIds.length}</b></div>
+                    <div><span className="text-gray-500">Équipe</span><br /><b>{(tournee.employeIds || []).map(getNom).join(', ') || '-'}</b></div>
+                    <div><span className="text-gray-500">Pts</span><br /><b>{(tournee.pointsCollecteIds || []).length}</b></div>
                     <div><span className="text-gray-500">Dist</span><br /><b className="text-emerald-700">{tournee.distanceKm || '?'} km</b></div>
                   </div>
                 </div>
@@ -221,10 +283,21 @@ export const TourList: React.FC = () => {
               </div>
             </div>
           );
-        })}
+        })
+        )}
       </div>
+
+      {/* Add Tour Modal */}
+      <AddTourModal 
+        isOpen={isAddModalOpen} 
+        onClose={() => setIsAddModalOpen(false)}
+        onSubmit={handleManualAdd}
+      />
     </div>
   );
 };
 
+// Export as both TourList and TourManagement for compatibility
+const TourManagement = TourList;
 export default TourList;
+export { TourManagement };

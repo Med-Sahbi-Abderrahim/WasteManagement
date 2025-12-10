@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<signalements>
+    <signalement>
+        <id>1</id>
+        <type>PANNE_CAMION</type>
+        <description>Incident signalé</description>
+        <pointCollecteId>6</pointCollecteId>
+        <employeId>4</employeId>
+        <dateSignalement>2025-12-10T15:48:02.136+01:00</dateSignalement>
+        <statut>NOUVEAU</statut>
+    </signalement>
+</signalements>

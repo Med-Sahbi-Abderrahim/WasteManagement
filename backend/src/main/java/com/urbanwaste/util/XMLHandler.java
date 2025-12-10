@@ -166,6 +166,8 @@ public class XMLHandler {
         classes.add(Technicien.class);
         classes.add(SuperviseurZone.class);
         classes.add(Tournee.class);
+        classes.add(Signalement.class);
+        classes.add(SignalementsWrapper.class);
         
         return classes.toArray(new Class<?>[0]);
     }

@@ -1,6 +1,6 @@
 // src/components/dashboard/SupervisorDashboard.tsx
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useWasteStore } from '../../store/wasteStore';
 import {
   Truck,
@@ -13,9 +13,17 @@ import {
   Circle,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import api from '../../services/api';
 
 const SupervisorDashboard: React.FC = () => {
-  const { tournees = [], employes = [], vehicules = [], signalements = [], addNotification } = useWasteStore();
+  const { tournees = [], employes = [], vehicules = [], addNotification } = useWasteStore();
+  const [signalements, setSignalements] = useState<any[]>([]);
+
+  useEffect(() => {
+    api.get('/signalements')
+      .then(res => setSignalements(res.data || []))
+      .catch(err => console.error('Failed to fetch signalements', err));
+  }, []);
 
   const [selectedTournee, setSelectedTournee] = useState<string | null>(null);
   const [message, setMessage] = useState('');
@@ -103,6 +111,38 @@ const SupervisorDashboard: React.FC = () => {
               </span>
             )}
           </Link>
+        </div>
+
+        {/* Liste des signalements */}
+        <div className="bg-white rounded-xl border border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <Bell size={20} className="text-red-500" /> Signalements récents
+            </h3>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {signalements.length === 0 ? (
+              <p className="text-center py-10 text-gray-400">Aucun signalement</p>
+            ) : (
+              signalements.slice(0, 8).map((s, i) => (
+                <div key={i} className="px-6 py-3 flex justify-between items-center hover:bg-gray-50">
+                  <div>
+                    <p className="font-semibold text-gray-900">{s.type}</p>
+                    <p className="text-xs text-gray-600">
+                      Point: {s.pointCollecteId ?? '-'} • Employé: {s.employeId ?? '-'}
+                    </p>
+                  </div>
+                  <span className={`px-2 py-1 rounded-full text-[10px] font-semibold text-white ${
+                    (s.statut || '').toUpperCase() === 'URGENT' ? 'bg-red-600' :
+                    (s.statut || '').toUpperCase() === 'EN_COURS' ? 'bg-blue-600' :
+                    'bg-gray-500'
+                  }`}>
+                    {s.statut || 'N/A'}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
         {/* TOURNÉES EN COURS – PROPRE ET DISCRET */}

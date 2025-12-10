@@ -1,6 +1,6 @@
 // src/components/dashboard/AdminDashboard.tsx
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useWasteStore } from '../../store/wasteStore';
@@ -11,6 +11,7 @@ import {
 import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import api from '../../services/api';
 
 // Fix icônes Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -53,13 +54,17 @@ const BarChart = ({ data, labels, title, color }: { data: number[]; labels: stri
 };
 
 export const AdminDashboard: React.FC = () => {
-  const { points, tournees, vehicules, employes, signalements, fetchPoints } = useWasteStore();
+  const { points, tournees, vehicules, employes, fetchPoints } = useWasteStore();
+  const [signalements, setSignalements] = useState<any[]>([]);
   const today = format(new Date(), 'EEEE dd MMMM yyyy', { locale: fr });
 
   // Fetch points on mount
   useEffect(() => {
     console.log('[AdminDashboard] Component mounted, fetching points...');
     fetchPoints();
+    api.get('/signalements')
+      .then(res => setSignalements(res.data || []))
+      .catch(err => console.error('Failed to fetch signalements', err));
   }, [fetchPoints]);
 
   const stats = {
@@ -110,7 +115,7 @@ export const AdminDashboard: React.FC = () => {
           </div>
           <div className="bg-white rounded border p-2 text-center shadow-sm">
             <AlertTriangle className="w-6 h-6 text-red-600 mx-auto mb-1" />
-            <p className="text-lg font-black text-red-600">{signalements.filter(s => s.statut === 'URGENT').length}</p>
+            <p className="text-lg font-black text-red-600">{signalements.filter(s => (s.statut || '').toUpperCase() === 'URGENT').length}</p>
             <p className="text-[10px]">Urgents</p>
           </div>
         </div>

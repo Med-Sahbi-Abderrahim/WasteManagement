@@ -20,14 +20,133 @@
         <localisation>456 Oak Avenue, Downtown</localisation>
         <niveauRemplissage>65.5</niveauRemplissage>
         <etatConteneur>ACTIF</etatConteneur>
-        <DateDerniereCollecte>2025-12-05T09:30:00.000+01:00</DateDerniereCollecte>
+        <DateDerniereCollecte>2025-12-05T09:30:00+01:00</DateDerniereCollecte>
         <typeDechet>
             <id>2</id>
             <nom>VERRE</nom>
         </typeDechet>
-        <latitude>34.7500</latitude>
-        <longitude>10.7700</longitude>
+        <latitude>34.75</latitude>
+        <longitude>10.77</longitude>
         <capacite>300</capacite>
         <modele>EcoBin</modele>
+    </pointCollecte>
+    <pointCollecte>
+        <id>3</id>
+        <localisation>789 High Street, Industrial Zone</localisation>
+        <niveauRemplissage>94.5</niveauRemplissage>
+        <etatConteneur>ACTIF</etatConteneur>
+        <DateDerniereCollecte>2025-01-10T14:20:00+01:00</DateDerniereCollecte>
+        <typeDechet>
+            <id>1</id>
+            <nom>PLASTIQUE</nom>
+        </typeDechet>
+        <latitude>34.76</latitude>
+        <longitude>10.78</longitude>
+        <capacite>500</capacite>
+        <modele>Standard</modele>
+    </pointCollecte>
+    <pointCollecte>
+        <id>4</id>
+        <localisation>321 Park Boulevard, Residential Area</localisation>
+        <niveauRemplissage>96.2</niveauRemplissage>
+        <etatConteneur>ACTIF</etatConteneur>
+        <DateDerniereCollecte>2025-01-09T16:45:00+01:00</DateDerniereCollecte>
+        <typeDechet>
+            <id>3</id>
+            <nom>PAPIER</nom>
+        </typeDechet>
+        <latitude>34.73</latitude>
+        <longitude>10.75</longitude>
+        <capacite>400</capacite>
+        <modele>EcoBin</modele>
+    </pointCollecte>
+    <pointCollecte>
+        <id>5</id>
+        <localisation>555 Market Square, City Center</localisation>
+        <niveauRemplissage>92.8</niveauRemplissage>
+        <etatConteneur>ACTIF</etatConteneur>
+        <DateDerniereCollecte>2025-01-11T10:15:00+01:00</DateDerniereCollecte>
+        <typeDechet>
+            <id>4</id>
+            <nom>ORGANIQUE</nom>
+        </typeDechet>
+        <latitude>34.745</latitude>
+        <longitude>10.765</longitude>
+        <capacite>600</capacite>
+        <modele>Standard</modele>
+    </pointCollecte>
+    <pointCollecte>
+        <id>6</id>
+        <localisation>999 Riverside Drive, Waterfront</localisation>
+        <niveauRemplissage>98.1</niveauRemplissage>
+        <etatConteneur>ACTIF</etatConteneur>
+        <DateDerniereCollecte>2025-01-08T08:30:00+01:00</DateDerniereCollecte>
+        <typeDechet>
+            <id>1</id>
+            <nom>PLASTIQUE</nom>
+        </typeDechet>
+        <latitude>34.72</latitude>
+        <longitude>10.74</longitude>
+        <capacite>500</capacite>
+        <modele>Standard</modele>
+    </pointCollecte>
+    <pointCollecte>
+        <id>7</id>
+        <localisation>777 Business District, Financial Center</localisation>
+        <niveauRemplissage>93.5</niveauRemplissage>
+        <etatConteneur>ACTIF</etatConteneur>
+        <DateDerniereCollecte>2025-01-12T12:00:00+01:00</DateDerniereCollecte>
+        <typeDechet>
+            <id>2</id>
+            <nom>VERRE</nom>
+        </typeDechet>
+        <latitude>34.755</latitude>
+        <longitude>10.775</longitude>
+        <capacite>350</capacite>
+        <modele>EcoBin</modele>
+    </pointCollecte>
+    <pointCollecte>
+        <id>8</id>
+        <localisation>111 University Campus, Education Zone</localisation>
+        <niveauRemplissage>95.0</niveauRemplissage>
+        <etatConteneur>ACTIF</etatConteneur>
+        <DateDerniereCollecte>2025-01-10T15:20:00+01:00</DateDerniereCollecte>
+        <typeDechet>
+            <id>3</id>
+            <nom>PAPIER</nom>
+        </typeDechet>
+        <latitude>34.735</latitude>
+        <longitude>10.755</longitude>
+        <capacite>450</capacite>
+        <modele>Standard</modele>
+    </pointCollecte>
+    <pointCollecte>
+        <id>9</id>
+        <localisation>222 Shopping Mall, Commercial Area</localisation>
+        <niveauRemplissage>97.3</niveauRemplissage>
+        <etatConteneur>ACTIF</etatConteneur>
+        <DateDerniereCollecte>2025-01-09T11:45:00+01:00</DateDerniereCollecte>
+        <typeDechet>
+            <id>1</id>
+            <nom>PLASTIQUE</nom>
+        </typeDechet>
+        <latitude>34.75</latitude>
+        <longitude>10.76</longitude>
+        <capacite>550</capacite>
+        <modele>EcoBin</modele>
+    </pointCollecte>
+    <pointCollecte>
+        <id>10</id>
+        <localisation>125qsdfgh</localisation>
+        <niveauRemplissage>57.0</niveauRemplissage>
+        <etatConteneur>ACTIF</etatConteneur>
+        <DateDerniereCollecte>2025-12-10T14:32:09.848+01:00</DateDerniereCollecte>
+        <typeDechet>
+            <id>1</id>
+            <nom>MIXTE</nom>
+        </typeDechet>
+        <latitude>125.0</latitude>
+        <longitude>250.0</longitude>
+        <capacite>0</capacite>
     </pointCollecte>
 </pointsCollecte>
