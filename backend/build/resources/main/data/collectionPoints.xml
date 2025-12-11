@@ -121,24 +121,9 @@
         <modele>Standard</modele>
     </pointCollecte>
     <pointCollecte>
-        <id>9</id>
-        <localisation>222 Shopping Mall, Commercial Area</localisation>
-        <niveauRemplissage>97.3</niveauRemplissage>
-        <etatConteneur>ACTIF</etatConteneur>
-        <DateDerniereCollecte>2025-01-09T11:45:00+01:00</DateDerniereCollecte>
-        <typeDechet>
-            <id>1</id>
-            <nom>PLASTIQUE</nom>
-        </typeDechet>
-        <latitude>34.75</latitude>
-        <longitude>10.76</longitude>
-        <capacite>550</capacite>
-        <modele>EcoBin</modele>
-    </pointCollecte>
-    <pointCollecte>
         <id>10</id>
-        <localisation>125qsdfgh</localisation>
-        <niveauRemplissage>57.0</niveauRemplissage>
+        <localisation>178</localisation>
+        <niveauRemplissage>69.0</niveauRemplissage>
         <etatConteneur>ACTIF</etatConteneur>
         <DateDerniereCollecte>2025-12-10T14:32:09.848+01:00</DateDerniereCollecte>
         <typeDechet>

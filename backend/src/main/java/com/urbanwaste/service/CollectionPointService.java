@@ -17,6 +17,7 @@ import com.urbanwaste.model.PointCollecte;
 import com.urbanwaste.model.PointsCollecteWrapper;
 import com.urbanwaste.model.TypeDechet;
 import com.urbanwaste.util.XMLHandler;
+import com.urbanwaste.exception.XMLValidationException;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.xml.bind.JAXBException;
@@ -73,7 +74,7 @@ public class CollectionPointService {
     /**
      * Create new collection point
      */
-    public PointCollecte createPoint(PointCollecte point) throws JAXBException {
+    public PointCollecte createPoint(PointCollecte point) throws JAXBException, XMLValidationException {
         // --- DEBUGGING START ---
         System.out.println("DEBUG: Creating Point");
         System.out.println("Address: " + point.getLocalisation()); 
@@ -119,7 +120,7 @@ public class CollectionPointService {
     /**
      * Update existing point
      */
-    public Optional<PointCollecte> updatePoint(int id, PointCollecte updatedPoint) throws JAXBException {
+    public Optional<PointCollecte> updatePoint(int id, PointCollecte updatedPoint) throws JAXBException, XMLValidationException {
         PointsCollecteWrapper wrapper = xmlHandler.loadFromXML(POINTS_FILE, PointsCollecteWrapper.class);
         
         // Ensure wrapper and list are initialized
@@ -158,7 +159,7 @@ public class CollectionPointService {
     /**
      * Delete point
      */
-    public boolean deletePoint(int id) throws JAXBException {
+    public boolean deletePoint(int id) throws JAXBException, XMLValidationException {
         PointsCollecteWrapper wrapper = xmlHandler.loadFromXML(POINTS_FILE, PointsCollecteWrapper.class);
         List<PointCollecte> points = wrapper.getPoints();
         
@@ -211,7 +212,7 @@ public class CollectionPointService {
     /**
      * Update fill level
      */
-    public Optional<PointCollecte> updateFillLevel(int id, float newLevel) throws JAXBException {
+    public Optional<PointCollecte> updateFillLevel(int id, float newLevel) throws JAXBException, XMLValidationException {
         PointsCollecteWrapper wrapper = xmlHandler.loadFromXML(POINTS_FILE, PointsCollecteWrapper.class);
         List<PointCollecte> points = wrapper.getPoints();
         

@@ -1,11 +1,15 @@
 // src/components/ReportList.tsx
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useWasteStore } from '../store/wasteStore';
 import { Upload, Download, AlertTriangle, CheckCircle, Clock, MapPin } from 'lucide-react';
 
 export const ReportList: React.FC = () => {
-  const { signalements, exportSignalementsXML, importSignalementsXML } = useWasteStore();
+  const { signalements, fetchSignalements, exportSignalementsXML, importSignalementsXML } = useWasteStore();
+
+  useEffect(() => {
+    fetchSignalements();
+  }, [fetchSignalements]);
 
   const getStatusConfig = (statut: string) => {
     switch (statut) {
@@ -28,7 +32,7 @@ export const ReportList: React.FC = () => {
       {/* EN-TÊTE + ACTIONS */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Signalements Citoyens</h2>
+          <h2 className="text-xl font-bold text-gray-900">Signalements</h2>
           <p className="text-xs text-gray-500">{signalements.length} signalement(s)</p>
         </div>
 
@@ -95,18 +99,24 @@ export const ReportList: React.FC = () => {
                       </div>
                     </div>
 
-                    <p className="text-sm text-gray-700 line-clamp-2">{s.message}</p>
+                    <p className="text-sm text-gray-700 line-clamp-2">{s.description || 'Aucune description'}</p>
 
                     <div className="flex items-center gap-3 mt-3 text-xs">
                       <span className="text-gray-500">
-                        {new Date(s.date).toLocaleDateString('fr-FR', {
+                        {s.dateSignalement ? new Date(s.dateSignalement).toLocaleDateString('fr-FR', {
                           weekday: 'short',
                           day: 'numeric',
                           month: 'short',
                           hour: '2-digit',
                           minute: '2-digit'
-                        })}
+                        }) : 'Date non disponible'}
                       </span>
+                      {s.employeId && (
+                        <>
+                          <span className="text-gray-400">•</span>
+                          <span className="text-gray-500">Employé ID: {s.employeId}</span>
+                        </>
+                      )}
 
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${color}`}>
                         <StatusIcon size={11} />

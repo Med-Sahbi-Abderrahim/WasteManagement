@@ -5,7 +5,7 @@ import clsx from 'clsx';
 // Composants
 import { CollectPointList } from '../components/PointsCollecte/CollectPointList';
 import TourManagement from '../components/tournees/TourManagement';
-import { StaffManagement } from '../components/employes/StaffManagement';
+import { UserManagement } from '../components/employes/UserManagement';
 import VehicleList from '../components/vehicules/VehicleList';
 import { ReportList } from '../components/ReportList';
 import { CreateReport } from '../components/CreateReport';
@@ -14,6 +14,7 @@ import { ActivityReports } from '../components/ActivityReports';
 import { AdminSettings } from '../components/AdminSettings';
 import { AdminDashboard } from '../components/dashboards/AdminDashboard';
 import { SupervisorDashboard } from '../components/dashboards/SupervisorDashboard';
+import { SupervisorTourDashboard } from '../components/dashboards/SupervisorTourDashboard';
 import { TechnicianDashboard } from '../components/dashboards/TechnicianDashboard';
 import { EmployeeDashboard } from '../components/dashboards/EmployeeDashboard';
 
@@ -49,22 +50,20 @@ export const WasteDashboard: React.FC = () => {
           { icon: Truck, label: 'Tournées', path: '/app/routes' },
           { icon: Users, label: 'Employés', path: '/app/staff' },
           { icon: Truck, label: 'Véhicules', path: '/app/vehicles' },
-          { icon: AlertTriangle, label: 'Signalements', path: '/app/routes' },
+          { icon: AlertTriangle, label: 'Signalements', path: '/app/reports' },
           { icon: FileText, label: 'Rapports', path: '/app/activities' },
           { icon: Settings, label: 'Paramètres', path: '/app/settings' },
         ];
       case 'SUPERVISEUR':
         return [
           ...common,
-          { icon: Truck, label: 'Suivi Tournées', path: '/app/routes' },
-          { icon: Users, label: 'Coordination', path: '/app/staff' },
-          { icon: Bell, label: 'Signalements', path: '/app/routes' },
+          { icon: Truck, label: 'Gestion Tournées', path: '/app/tours' },
+          { icon: Bell, label: 'Signalements', path: '/app/reports' },
           { icon: FileText, label: 'Rapports Activité', path: '/app/activities' },
         ];
       case 'TECHNICIEN':
         return [
           ...common,
-          { icon: Truck, label: 'Mes Tournées', path: '/app/routes' },
           { icon: AlertTriangle, label: 'Signalements', path: '/app/reports' },
         ];
       case 'EMPLOYE':
@@ -177,7 +176,8 @@ export const WasteDashboard: React.FC = () => {
             } />
             <Route path="/points" element={<CollectPointList />} />
             <Route path="/routes" element={user.role === 'EMPLOYE' ? <EmployeeDashboard /> : <TourManagement />} />
-            <Route path="/staff" element={<StaffManagement />} />
+            <Route path="/tours" element={user.role === 'SUPERVISEUR' ? <SupervisorTourDashboard /> : <TourManagement />} />
+            <Route path="/staff" element={<UserManagement />} />
             <Route path="/vehicles" element={<VehicleList />} />
             <Route path="/reports" element={<ReportList />} />
             <Route path="/activities" element={<ActivityReports />} />

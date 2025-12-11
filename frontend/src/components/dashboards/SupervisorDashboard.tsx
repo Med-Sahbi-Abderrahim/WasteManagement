@@ -13,17 +13,13 @@ import {
   Circle,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import api from '../../services/api';
 
 const SupervisorDashboard: React.FC = () => {
-  const { tournees = [], employes = [], vehicules = [], addNotification } = useWasteStore();
-  const [signalements, setSignalements] = useState<any[]>([]);
+  const { tournees = [], employes = [], vehicules = [], signalements, addNotification, fetchSignalements } = useWasteStore();
 
   useEffect(() => {
-    api.get('/signalements')
-      .then(res => setSignalements(res.data || []))
-      .catch(err => console.error('Failed to fetch signalements', err));
-  }, []);
+    fetchSignalements();
+  }, [fetchSignalements]);
 
   const [selectedTournee, setSelectedTournee] = useState<string | null>(null);
   const [message, setMessage] = useState('');

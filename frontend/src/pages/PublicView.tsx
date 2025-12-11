@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { useWasteStore } from '../store/wasteStore';
 import type { PointCollecte } from '../types/waste';
 import heroImage from '../assets/hero-ecoville.jpeg';
@@ -12,11 +12,94 @@ import {
   Leaf,
   Truck,
   Activity,
-  AlertTriangle,
+  Search,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import api from '../services/api';
 
 const WasteMap = React.lazy(() => import('../components/WasteMap.tsx'));
+
+// Schedule Checker Component
+const ScheduleChecker: React.FC = () => {
+  const [zone, setZone] = useState('');
+  const [schedules, setSchedules] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searched, setSearched] = useState(false);
+
+  const handleSearch = async () => {
+    if (!zone.trim()) return;
+    
+    setLoading(true);
+    setSearched(true);
+    try {
+      const response = await api.get('/public/schedules', { params: { zone: zone.trim() } });
+      setSchedules(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch schedules', error);
+      setSchedules([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-200">
+      <div className="flex gap-3 mb-6">
+        <input
+          type="text"
+          value={zone}
+          onChange={(e) => setZone(e.target.value)}
+          onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+          placeholder="Entrez votre zone (ex: Centre-Ville, Zone Nord)"
+          className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+        />
+        <button
+          onClick={handleSearch}
+          disabled={loading || !zone.trim()}
+          className="px-6 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+        >
+          <Search size={20} />
+          {loading ? 'Recherche...' : 'Rechercher'}
+        </button>
+      </div>
+
+      {searched && (
+        <div className="mt-6">
+          {schedules.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Calendar size={48} className="mx-auto mb-3 opacity-50" />
+              <p>Aucun horaire trouvé pour cette zone.</p>
+              <p className="text-sm mt-2">Essayez avec un autre nom de zone.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <h3 className="font-bold text-lg text-gray-900 mb-4">Planning hebdomadaire</h3>
+              {schedules.map((schedule, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200 hover:shadow-md transition"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center text-green-600 font-bold">
+                      {schedule.day?.charAt(0) || '?'}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900">{schedule.day}</p>
+                      <p className="text-sm text-gray-600">{schedule.type}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium text-gray-900">{schedule.time || 'Non spécifié'}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const PublicView: React.FC = () => {
   const { points, fetchPoints } = useWasteStore();
@@ -82,10 +165,6 @@ export const PublicView: React.FC = () => {
                 <MapPin size={20} />
                 Trouver un point de collecte
               </a>
-              <Link to="/login" className="px-8 py-4 bg-white/10 backdrop-blur-sm border border-white/20 text-white rounded-full font-semibold hover:bg-white/20 transition-all flex items-center gap-2">
-                Signaler un incident
-                <ArrowRight size={20} />
-              </Link>
             </div>
           </div>
         </div>
@@ -114,6 +193,20 @@ export const PublicView: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* SECTION HORAIRES */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-2xl mx-auto">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-gray-900 mb-3">Consulter les horaires de collecte</h2>
+              <p className="text-gray-600">Entrez votre zone pour voir les jours de passage</p>
+            </div>
+            
+            <ScheduleChecker />
+          </div>
+        </div>
+      </section>
 
       {/* SECTION CARTE + LÉGENDE — CORRIGÉE (PLUS DE BLANC) */}
       <section id="carte" className="py-20 bg-gray-50 min-h-screen">
@@ -175,18 +268,6 @@ export const PublicView: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="pt-6 border-t border-gray-200">
-                    <p className="text-sm text-gray-600 mb-4 flex items-start gap-2">
-                      <AlertTriangle size={16} className="text-orange-500 mt-0.5" />
-                      Vous constatez un problème sur un point de collecte ?
-                    </p>
-                    <Link
-                      to="/login"
-                      className="w-full bg-orange-600 text-white py-3 px-4 rounded-xl font-medium hover:bg-orange-700 transition flex items-center justify-center gap-2 shadow-md"
-                    >
-                      Signaler un incident
-                    </Link>
-                  </div>
                 </div>
               </div>
             </div>

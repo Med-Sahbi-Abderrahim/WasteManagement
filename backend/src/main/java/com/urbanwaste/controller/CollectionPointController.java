@@ -2,6 +2,7 @@ package com.urbanwaste.controller;
 
 import com.urbanwaste.model.PointCollecte;
 import com.urbanwaste.service.CollectionPointService;
+import com.urbanwaste.exception.XMLValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
@@ -46,9 +47,12 @@ public class CollectionPointController {
         try {
             PointCollecte created = pointService.createPoint(point);
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        } catch (XMLValidationException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", "Validation Error: " + e.getMessage()));
         } catch (JAXBException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", e.getMessage()));
+                .body(Map.of("error", "Error processing XML"));
         }
     }
     
@@ -60,9 +64,12 @@ public class CollectionPointController {
                 ? ResponseEntity.ok(updated.get())
                 : ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", "Point not found"));
+        } catch (XMLValidationException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", "Validation Error: " + e.getMessage()));
         } catch (JAXBException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", e.getMessage()));
+                .body(Map.of("error", "Error processing XML"));
         }
     }
     
@@ -74,9 +81,12 @@ public class CollectionPointController {
                 ? ResponseEntity.ok(Map.of("message", "Point deleted successfully"))
                 : ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", "Point not found"));
+        } catch (XMLValidationException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", "Validation Error: " + e.getMessage()));
         } catch (JAXBException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", e.getMessage()));
+                .body(Map.of("error", "Error processing XML"));
         }
     }
     
@@ -118,9 +128,12 @@ public class CollectionPointController {
                 ? ResponseEntity.ok(updated.get())
                 : ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", "Point not found"));
+        } catch (XMLValidationException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", "Validation Error: " + e.getMessage()));
         } catch (JAXBException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", e.getMessage()));
+                .body(Map.of("error", "Error processing XML"));
         }
     }
 }

@@ -2,11 +2,13 @@ package com.urbanwaste.service;
 
 import com.urbanwaste.model.*;
 import com.urbanwaste.util.XMLHandler;
+import com.urbanwaste.exception.XMLValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct; 
 import jakarta.xml.bind.JAXBException; 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -46,17 +48,200 @@ public class AuthService {
     
     /**
      * Login with username (mail) and password
+     * Chain of Responsibility: Check admins -> superviseurs -> techniciens -> employees
      */
-    public Optional<Utilisateur> login(String mail, String password) {
+    public Utilisateur login(String mail, String password) {
+        System.out.println("[AuthService] Login attempt for email: " + mail);
+        
         try {
-            List<Utilisateur> users = getAllUsers();
-            return users.stream()
-                .filter(u -> u.getMail().equals(mail) && 
-                            u.getPassword() != null && 
-                            u.getPassword().equals(password))
-                .findFirst();
-        } catch (JAXBException e) {
-            throw new RuntimeException("Failed to authenticate user", e);
+            // Step 1: Check admins.xml
+            System.out.println("[AuthService] Step 1: Checking Admins...");
+            if (xmlHandler.fileExists("admins.xml")) {
+                try {
+                    AdminsWrapper adminsWrapper = xmlHandler.loadFromXML("admins.xml", AdminsWrapper.class);
+                    if (adminsWrapper != null && adminsWrapper.getAdmins() != null && !adminsWrapper.getAdmins().isEmpty()) {
+                        System.out.println("[AuthService] Found " + adminsWrapper.getAdmins().size() + " admins");
+                        Utilisateur admin = adminsWrapper.getAdmins().stream()
+                            .filter(u -> {
+                                if (u == null) return false;
+                                boolean mailMatch = u.getMail() != null && u.getMail().equals(mail);
+                                if (!mailMatch) return false;
+                                
+                                String storedPassword = u.getMotDePasse();
+                                if (storedPassword == null || storedPassword.isEmpty()) {
+                                    storedPassword = u.getPassword();
+                                }
+                                
+                                System.out.println("[AuthService] Admin mail match found. Stored password (motDePasse): '" + u.getMotDePasse() + "', Stored password (password): '" + u.getPassword() + "', Final: '" + storedPassword + "', Input: '" + password + "'");
+                                
+                                boolean passwordMatch = storedPassword != null && storedPassword.equals(password);
+                                System.out.println("[AuthService] Password match: " + passwordMatch);
+                                return passwordMatch;
+                            })
+                            .findFirst()
+                            .orElse(null);
+                        if (admin != null) {
+                            System.out.println("[AuthService] ✓ Found in Admins - ID: " + admin.getId());
+                            admin.setRole("ADMIN");
+                            return admin;
+                        }
+                    } else {
+                        System.out.println("[AuthService] AdminsWrapper is null or empty");
+                    }
+                } catch (Exception e) {
+                    System.err.println("[AuthService] Error loading admins.xml: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            } else {
+                System.out.println("[AuthService] admins.xml file does not exist");
+            }
+            
+            // Step 2: Check superviseurs.xml
+            System.out.println("[AuthService] Step 2: Checking Superviseurs...");
+            if (xmlHandler.fileExists("superviseurs.xml")) {
+                try {
+                    SuperviseursWrapper superviseursWrapper = xmlHandler.loadFromXML("superviseurs.xml", SuperviseursWrapper.class);
+                    if (superviseursWrapper != null && superviseursWrapper.getSuperviseurs() != null && !superviseursWrapper.getSuperviseurs().isEmpty()) {
+                        System.out.println("[AuthService] Found " + superviseursWrapper.getSuperviseurs().size() + " superviseurs");
+                        Utilisateur superviseur = superviseursWrapper.getSuperviseurs().stream()
+                            .filter(u -> {
+                                if (u == null) return false;
+                                boolean mailMatch = u.getMail() != null && u.getMail().equals(mail);
+                                if (!mailMatch) return false;
+                                
+                                String storedPassword = u.getMotDePasse();
+                                if (storedPassword == null || storedPassword.isEmpty()) {
+                                    storedPassword = u.getPassword();
+                                }
+                                
+                                System.out.println("[AuthService] Superviseur mail match found. Stored password (motDePasse): '" + u.getMotDePasse() + "', Stored password (password): '" + u.getPassword() + "', Final: '" + storedPassword + "', Input: '" + password + "'");
+                                
+                                boolean passwordMatch = storedPassword != null && storedPassword.equals(password);
+                                System.out.println("[AuthService] Password match: " + passwordMatch);
+                                return passwordMatch;
+                            })
+                            .findFirst()
+                            .orElse(null);
+                        if (superviseur != null) {
+                            System.out.println("[AuthService] ✓ Found in Superviseurs - ID: " + superviseur.getId());
+                            superviseur.setRole("SUPERVISEUR");
+                            return superviseur;
+                        }
+                    } else {
+                        System.out.println("[AuthService] SuperviseursWrapper is null or empty");
+                    }
+                } catch (Exception e) {
+                    System.err.println("[AuthService] Error loading superviseurs.xml: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            } else {
+                System.out.println("[AuthService] superviseurs.xml file does not exist");
+            }
+            
+            // Step 3: Check techiciens.xml (note: filename has one 'n')
+            System.out.println("[AuthService] Step 3: Checking Techniciens...");
+            if (xmlHandler.fileExists("techiciens.xml")) {
+                try {
+                    TechniciensWrapper techniciensWrapper = xmlHandler.loadFromXML("techiciens.xml", TechniciensWrapper.class);
+                    if (techniciensWrapper != null && techniciensWrapper.getTechniciens() != null && !techniciensWrapper.getTechniciens().isEmpty()) {
+                        System.out.println("[AuthService] Found " + techniciensWrapper.getTechniciens().size() + " techniciens");
+                        Utilisateur technicien = techniciensWrapper.getTechniciens().stream()
+                            .filter(u -> {
+                                if (u == null) return false;
+                                boolean mailMatch = u.getMail() != null && u.getMail().equals(mail);
+                                if (!mailMatch) return false;
+                                
+                                String storedPassword = u.getMotDePasse();
+                                if (storedPassword == null || storedPassword.isEmpty()) {
+                                    storedPassword = u.getPassword();
+                                }
+                                
+                                System.out.println("[AuthService] Technicien mail match found. Stored password (motDePasse): '" + u.getMotDePasse() + "', Stored password (password): '" + u.getPassword() + "', Final: '" + storedPassword + "', Input: '" + password + "'");
+                                
+                                boolean passwordMatch = storedPassword != null && storedPassword.equals(password);
+                                System.out.println("[AuthService] Password match: " + passwordMatch);
+                                return passwordMatch;
+                            })
+                            .findFirst()
+                            .orElse(null);
+                        if (technicien != null) {
+                            System.out.println("[AuthService] ✓ Found in Techniciens - ID: " + technicien.getId());
+                            technicien.setRole("TECHNICIEN");
+                            return technicien;
+                        }
+                    } else {
+                        System.out.println("[AuthService] TechniciensWrapper is null or empty");
+                    }
+                } catch (Exception e) {
+                    System.err.println("[AuthService] Error loading techiciens.xml: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            } else {
+                System.out.println("[AuthService] techiciens.xml file does not exist");
+            }
+            
+            // Step 4: Check employees.xml
+            System.out.println("[AuthService] Step 4: Checking Employees...");
+            if (xmlHandler.fileExists("employees.xml")) {
+                try {
+                    EmployeesWrapper employeesWrapper = xmlHandler.loadFromXML("employees.xml", EmployeesWrapper.class);
+                    if (employeesWrapper != null && employeesWrapper.getEmployes() != null && !employeesWrapper.getEmployes().isEmpty()) {
+                        System.out.println("[AuthService] Found " + employeesWrapper.getEmployes().size() + " employees");
+                        Utilisateur employe = employeesWrapper.getEmployes().stream()
+                            .filter(u -> {
+                                if (u == null) return false;
+                                boolean mailMatch = u.getMail() != null && u.getMail().equals(mail);
+                                if (!mailMatch) return false;
+                                
+                                String storedPassword = u.getMotDePasse();
+                                if (storedPassword == null || storedPassword.isEmpty()) {
+                                    storedPassword = u.getPassword();
+                                }
+                                
+                                System.out.println("[AuthService] Employee mail match found. Stored password (motDePasse): '" + u.getMotDePasse() + "', Stored password (password): '" + u.getPassword() + "', Final: '" + storedPassword + "', Input: '" + password + "'");
+                                
+                                boolean passwordMatch = storedPassword != null && storedPassword.equals(password);
+                                System.out.println("[AuthService] Password match: " + passwordMatch);
+                                return passwordMatch;
+                            })
+                            .findFirst()
+                            .orElse(null);
+                        if (employe != null) {
+                            // Set role based on employee type (EMPLOYE or CHAUFFEUR)
+                            String role = employe.getRole();
+                            if (role == null || role.isEmpty()) {
+                                employe.setRole("EMPLOYE");
+                            }
+                            System.out.println("[AuthService] ✓ Found in Employees - ID: " + employe.getId() + ", Role: " + employe.getRole());
+                            return employe;
+                        }
+                    } else {
+                        System.out.println("[AuthService] EmployeesWrapper is null or empty");
+                    }
+                } catch (Exception e) {
+                    System.err.println("[AuthService] Error loading employees.xml: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            } else {
+                System.out.println("[AuthService] employees.xml file does not exist");
+            }
+            
+            // Step 5: No match found
+            System.out.println("[AuthService] ✗ No match found in any file");
+            throw new RuntimeException("Identifiants incorrects");
+            
+        } catch (RuntimeException e) {
+            // Re-throw authentication failures
+            if (e.getMessage() != null && e.getMessage().contains("Identifiants incorrects")) {
+                throw e;
+            }
+            System.err.println("[AuthService] RuntimeException during login: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Failed to authenticate user: " + e.getMessage(), e);
+        } catch (Exception e) {
+            System.err.println("[AuthService] Unexpected exception during login: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Failed to authenticate user: " + e.getMessage(), e);
         }
     }
     
@@ -92,7 +277,7 @@ public class AuthService {
             xmlHandler.saveToXML(wrapper, USERS_FILE);
             
             return newUser;
-        } catch (JAXBException e) {
+        } catch (JAXBException | XMLValidationException e) {
             throw new RuntimeException("Failed to register user", e);
         }
     }
@@ -152,7 +337,7 @@ public class AuthService {
             xmlHandler.saveToXML(wrapper, USERS_FILE);
             
             return Optional.of(updatedUser);
-        } catch (JAXBException e) {
+        } catch (JAXBException | XMLValidationException e) {
             throw new RuntimeException("Failed to update user", e);
         }
     }
@@ -173,7 +358,7 @@ public class AuthService {
             }
             
             return removed;
-        } catch (JAXBException e) {
+        } catch (JAXBException | XMLValidationException e) {
             throw new RuntimeException("Failed to delete user", e);
         }
     }
@@ -208,7 +393,7 @@ public class AuthService {
         try {
             xmlHandler.saveToXML(wrapper, USERS_FILE);
             System.out.println("✓ Default users initialized successfully");
-        } catch (JAXBException e) {
+        } catch (JAXBException | XMLValidationException e) {
             throw new RuntimeException("Failed to initialize default users", e);
         }
     }

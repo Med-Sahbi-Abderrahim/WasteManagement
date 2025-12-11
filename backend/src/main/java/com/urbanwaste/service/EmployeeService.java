@@ -2,9 +2,9 @@ package com.urbanwaste.service;
 
 import com.urbanwaste.model.Utilisateur; // Assuming the base class or subclass is named Utilisateur/Employe
 import com.urbanwaste.model.Employee; // Import Employee class
-import com.urbanwaste.model.UtilisateursWrapper; // For utilisateurs.xml (all users)
-import com.urbanwaste.model.XmlList; // For employees.xml (employees only)
+import com.urbanwaste.model.EmployeesWrapper; // For employees.xml (employees only)
 import com.urbanwaste.util.XMLHandler;
+import com.urbanwaste.exception.XMLValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -41,36 +41,18 @@ public class EmployeeService {
     }
     
     /**
-     * Get all employees
+     * Get all employees - loads ONLY from employees.xml
      */
-    @SuppressWarnings("unchecked")
     public List<Utilisateur> getAllEmployees() throws JAXBException {
-        // Try to load from employees.xml first
-        try {
-            XmlList<?> employeesList = xmlHandler.loadFromXML(EMPLOYEES_FILE, XmlList.class);
-            if (employeesList != null && employeesList.getItems() != null && !employeesList.getItems().isEmpty()) {
-                // Convert items to Employee list
-                List<Employee> employees = new ArrayList<>();
-                for (Object item : employeesList.getItems()) {
-                    if (item instanceof Employee) {
-                        employees.add((Employee) item);
-                    }
-                }
-                return new ArrayList<>(employees);
-            }
-        } catch (Exception e) {
-            System.out.println("Could not load from employees.xml, trying utilisateurs.xml: " + e.getMessage());
-        }
-        
-        // Fallback to utilisateurs.xml (for backward compatibility)
-        UtilisateursWrapper wrapper = xmlHandler.loadFromXML("utilisateurs.xml", UtilisateursWrapper.class);
-        if (wrapper == null || wrapper.getUtilisateurs() == null) {
+        System.out.println("[EmployeeService] Loading employees from XML file: " + EMPLOYEES_FILE);
+        EmployeesWrapper wrapper = xmlHandler.loadFromXML(EMPLOYEES_FILE, EmployeesWrapper.class);
+        if (wrapper == null || wrapper.getEmployes() == null) {
+            System.out.println("[EmployeeService] No employees found in XML file");
             return new ArrayList<>();
         }
-        // Filter to only return employees
-        return wrapper.getUtilisateurs().stream()
-            .filter(u -> "EMPLOYE".equals(u.getRole()) || u instanceof com.urbanwaste.model.Employee)
-            .collect(Collectors.toList());
+        List<Utilisateur> employees = new ArrayList<>(wrapper.getEmployes());
+        System.out.println("[EmployeeService] Loaded " + employees.size() + " employees from " + EMPLOYEES_FILE);
+        return employees;
     }
     
     /**
@@ -83,27 +65,15 @@ public class EmployeeService {
     }
     
     /**
-     * Create new employee
+     * Create new employee - saves ONLY to employees.xml
      */
-    @SuppressWarnings("unchecked")
-    public Utilisateur createEmployee(Utilisateur user) throws JAXBException {
+    public Utilisateur createEmployee(Utilisateur user) throws JAXBException, XMLValidationException {
+        System.out.println("[EmployeeService] Creating employee - loading from XML: " + EMPLOYEES_FILE);
         // Load existing employees from employees.xml
-        XmlList<?> employeesList = null;
-        List<Employee> employees = new ArrayList<>();
-        
-        try {
-            employeesList = xmlHandler.loadFromXML(EMPLOYEES_FILE, XmlList.class);
-            if (employeesList != null && employeesList.getItems() != null) {
-                // Convert items to Employee list
-                for (Object item : employeesList.getItems()) {
-                    if (item instanceof Employee) {
-                        employees.add((Employee) item);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            System.out.println("Could not load employees.xml, creating new list: " + e.getMessage());
-        }
+        EmployeesWrapper wrapper = xmlHandler.loadFromXML(EMPLOYEES_FILE, EmployeesWrapper.class);
+        List<Employee> employees = wrapper != null && wrapper.getEmployes() != null 
+            ? new ArrayList<>(wrapper.getEmployes()) 
+            : new ArrayList<>();
         
         // IMPORTANT: Convert Utilisateur to Employee instance
         Employee employee = new Employee();
@@ -124,121 +94,88 @@ public class EmployeeService {
         // Add the new employee
         employees.add(employee);
         
-        // Create new XmlList wrapper
-        XmlList<Employee> newEmployeesList = new XmlList<>(employees);
+        // Create new EmployeesWrapper
+        EmployeesWrapper newWrapper = new EmployeesWrapper();
+        newWrapper.setEmployes(employees);
         
-        System.out.println("=== Saving Employee to employees.xml ===");
-        System.out.println("Employee ID: " + employee.getId());
-        System.out.println("Employee Name: " + employee.getPrenom() + " " + employee.getNom());
-        System.out.println("Total employees: " + employees.size());
+        System.out.println("[EmployeeService] Saving employee to XML: " + EMPLOYEES_FILE);
+        System.out.println("[EmployeeService] Employee ID: " + employee.getId());
+        System.out.println("[EmployeeService] Employee Name: " + employee.getPrenom() + " " + employee.getNom());
+        System.out.println("[EmployeeService] Total employees: " + employees.size());
         
-        try {
-            // Save to employees.xml
-            xmlHandler.saveToXML(newEmployeesList, EMPLOYEES_FILE);
-            System.out.println("✓ Employee saved successfully to XML file: " + EMPLOYEES_FILE);
-            
-            // Verify the file was actually written
-            java.io.File file = new java.io.File("src/main/resources/data/" + EMPLOYEES_FILE);
-            if (file.exists()) {
-                System.out.println("✓ File exists at: " + file.getAbsolutePath());
-                System.out.println("✓ File size: " + file.length() + " bytes");
-            } else {
-                System.err.println("✗ WARNING: File not found at expected location: " + file.getAbsolutePath());
-            }
-        } catch (JAXBException e) {
-            System.err.println("✗ ERROR: Failed to save employee to XML: " + e.getMessage());
-            e.printStackTrace();
-            throw e;
-        } catch (Exception e) {
-            System.err.println("✗ ERROR: Unexpected error while saving: " + e.getMessage());
-            e.printStackTrace();
-            throw new JAXBException("Failed to save employee", e);
-        }
+        xmlHandler.saveToXML(newWrapper, EMPLOYEES_FILE);
+        System.out.println("[EmployeeService] ✓ Employee saved successfully to XML file: " + EMPLOYEES_FILE);
         
         return employee;
     }
     
     /**
-     * Update existing employee
+     * Update existing employee - saves ONLY to employees.xml
      */
-    @SuppressWarnings("unchecked")
-    public Optional<Utilisateur> updateEmployee(int id, Utilisateur updatedUser) throws JAXBException {
+    public Optional<Utilisateur> updateEmployee(int id, Utilisateur updatedUser) throws JAXBException, XMLValidationException {
+        System.out.println("[EmployeeService] Updating employee ID " + id + " - loading from XML: " + EMPLOYEES_FILE);
         // Load existing employees from employees.xml
-        XmlList<?> employeesList = null;
-        List<Employee> employees = new ArrayList<>();
-        
-        try {
-            employeesList = xmlHandler.loadFromXML(EMPLOYEES_FILE, XmlList.class);
-            if (employeesList != null && employeesList.getItems() != null) {
-                for (Object item : employeesList.getItems()) {
-                    if (item instanceof Employee) {
-                        employees.add((Employee) item);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            System.out.println("Could not load employees.xml: " + e.getMessage());
-        }
+        EmployeesWrapper wrapper = xmlHandler.loadFromXML(EMPLOYEES_FILE, EmployeesWrapper.class);
+        List<Employee> employees = wrapper != null && wrapper.getEmployes() != null 
+            ? new ArrayList<>(wrapper.getEmployes()) 
+            : new ArrayList<>();
         
         Optional<Employee> existing = employees.stream()
             .filter(e -> e.getId() == id)
             .findFirst();
         
         if (existing.isEmpty()) {
+            System.out.println("[EmployeeService] Employee ID " + id + " not found in XML");
             return Optional.empty();
         }
         
-        // Convert updatedUser to Employee
+        // Smart merge: use incoming value if provided, otherwise keep existing
+        Employee existingEmployee = existing.get();
         Employee updatedEmployee = new Employee();
         updatedEmployee.setId(id);
-        updatedEmployee.setMail(updatedUser.getMail());
-        updatedEmployee.setNom(updatedUser.getNom());
-        updatedEmployee.setPrenom(updatedUser.getPrenom());
-        updatedEmployee.setTelephone(updatedUser.getTelephone());
-        updatedEmployee.setPassword(updatedUser.getPassword());
-        updatedEmployee.setRole(updatedUser.getRole() != null ? updatedUser.getRole() : "EMPLOYE");
+        updatedEmployee.setMail(updatedUser.getMail() != null ? updatedUser.getMail() : existingEmployee.getMail());
+        updatedEmployee.setNom(updatedUser.getNom() != null ? updatedUser.getNom() : existingEmployee.getNom());
+        updatedEmployee.setPrenom(updatedUser.getPrenom() != null ? updatedUser.getPrenom() : existingEmployee.getPrenom());
+        updatedEmployee.setTelephone(updatedUser.getTelephone() != 0 ? updatedUser.getTelephone() : existingEmployee.getTelephone());
+        updatedEmployee.setPassword(updatedUser.getPassword() != null ? updatedUser.getPassword() : existingEmployee.getPassword());
+        updatedEmployee.setRole(updatedUser.getRole() != null ? updatedUser.getRole() : existingEmployee.getRole() != null ? existingEmployee.getRole() : "EMPLOYE");
         if (updatedUser instanceof Employee) {
             updatedEmployee.setDisponible(((Employee) updatedUser).isDisponible());
         } else {
-            updatedEmployee.setDisponible(existing.get().isDisponible());
+            updatedEmployee.setDisponible(existingEmployee.isDisponible());
         }
         
         employees.removeIf(e -> e.getId() == id);
         employees.add(updatedEmployee);
         
-        XmlList<Employee> newEmployeesList = new XmlList<>(employees);
-        xmlHandler.saveToXML(newEmployeesList, EMPLOYEES_FILE);
+        EmployeesWrapper newWrapper = new EmployeesWrapper();
+        newWrapper.setEmployes(employees);
+        System.out.println("[EmployeeService] Saving updated employee to XML: " + EMPLOYEES_FILE);
+        xmlHandler.saveToXML(newWrapper, EMPLOYEES_FILE);
         
         return Optional.of(updatedEmployee);
     }
     
     /**
-     * Delete employee
+     * Delete employee - saves ONLY to employees.xml
      */
-    @SuppressWarnings("unchecked")
-    public boolean deleteEmployee(int id) throws JAXBException {
+    public boolean deleteEmployee(int id) throws JAXBException, XMLValidationException {
+        System.out.println("[EmployeeService] Deleting employee ID " + id + " - loading from XML: " + EMPLOYEES_FILE);
         // Load existing employees from employees.xml
-        XmlList<?> employeesList = null;
-        List<Employee> employees = new ArrayList<>();
-        
-        try {
-            employeesList = xmlHandler.loadFromXML(EMPLOYEES_FILE, XmlList.class);
-            if (employeesList != null && employeesList.getItems() != null) {
-                for (Object item : employeesList.getItems()) {
-                    if (item instanceof Employee) {
-                        employees.add((Employee) item);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            System.out.println("Could not load employees.xml: " + e.getMessage());
-        }
+        EmployeesWrapper wrapper = xmlHandler.loadFromXML(EMPLOYEES_FILE, EmployeesWrapper.class);
+        List<Employee> employees = wrapper != null && wrapper.getEmployes() != null 
+            ? new ArrayList<>(wrapper.getEmployes()) 
+            : new ArrayList<>();
         
         boolean removed = employees.removeIf(e -> e.getId() == id);
         
         if (removed) {
-            XmlList<Employee> newEmployeesList = new XmlList<>(employees);
-            xmlHandler.saveToXML(newEmployeesList, EMPLOYEES_FILE);
+            EmployeesWrapper newWrapper = new EmployeesWrapper();
+            newWrapper.setEmployes(employees);
+            System.out.println("[EmployeeService] Saving updated employees list to XML: " + EMPLOYEES_FILE);
+            xmlHandler.saveToXML(newWrapper, EMPLOYEES_FILE);
+        } else {
+            System.out.println("[EmployeeService] Employee ID " + id + " not found in XML");
         }
         
         return removed;

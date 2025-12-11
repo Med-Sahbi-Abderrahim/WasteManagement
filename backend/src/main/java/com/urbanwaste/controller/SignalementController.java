@@ -2,6 +2,7 @@ package com.urbanwaste.controller;
 
 import com.urbanwaste.model.Signalement;
 import com.urbanwaste.service.SignalementService;
+import com.urbanwaste.exception.XMLValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +29,9 @@ public class SignalementController {
         try {
             Signalement created = signalementService.create(signalement);
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        } catch (XMLValidationException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", e.getMessage()));
         } catch (JAXBException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", e.getMessage()));
@@ -77,6 +81,9 @@ public class SignalementController {
             return updated.<ResponseEntity<?>>map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", "Signalement not found")));
+        } catch (XMLValidationException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", e.getMessage()));
         } catch (JAXBException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", e.getMessage()));

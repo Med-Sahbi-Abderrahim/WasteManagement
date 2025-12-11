@@ -2,6 +2,7 @@ package com.urbanwaste.controller;
 
 import com.urbanwaste.model.Vehicule; 
 import com.urbanwaste.service.VehicleService;
+import com.urbanwaste.exception.XMLValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -59,6 +60,9 @@ public class VehicleController {
         try {
             Vehicule newVehicle = vehicleService.createVehicle(vehicle);
             return ResponseEntity.status(HttpStatus.CREATED).body(newVehicle);
+        } catch (XMLValidationException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", e.getMessage()));
         } catch (JAXBException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", e.getMessage()));
@@ -76,6 +80,9 @@ public class VehicleController {
                 ? ResponseEntity.ok(updatedVehicle.get())
                 : ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", "Vehicle not found"));
+        } catch (XMLValidationException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", e.getMessage()));
         } catch (JAXBException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", e.getMessage()));
@@ -93,6 +100,9 @@ public class VehicleController {
                 ? ResponseEntity.ok(Map.of("message", "Vehicle deleted successfully"))
                 : ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", "Vehicle not found"));
+        } catch (XMLValidationException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", e.getMessage()));
         } catch (JAXBException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", e.getMessage()));

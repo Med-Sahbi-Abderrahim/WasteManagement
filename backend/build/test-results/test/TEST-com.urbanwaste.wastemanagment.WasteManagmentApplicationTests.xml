@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.urbanwaste.wastemanagment.WasteManagmentApplicationTests" tests="1" skipped="0" failures="0" errors="0" timestamp="2025-12-10T14:58:14.242Z" hostname="LAPTOP-U2FH2JJ8" time="0.467">
+<testsuite name="com.urbanwaste.wastemanagment.WasteManagmentApplicationTests" tests="1" skipped="0" failures="0" errors="0" timestamp="2025-12-11T00:15:12.125Z" hostname="LAPTOP-U2FH2JJ8" time="0.527">
   <properties/>
-  <testcase name="contextLoads()" classname="com.urbanwaste.wastemanagment.WasteManagmentApplicationTests" time="0.467"/>
-  <system-out><![CDATA[15:58:12.451 [Test worker] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.urbanwaste.wastemanagment.WasteManagmentApplicationTests]: WasteManagmentApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
-15:58:12.544 [Test worker] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.urbanwaste.UrbanWasteApplication for test class com.urbanwaste.wastemanagment.WasteManagmentApplicationTests
+  <testcase name="contextLoads()" classname="com.urbanwaste.wastemanagment.WasteManagmentApplicationTests" time="0.527"/>
+  <system-out><![CDATA[01:15:10.035 [Test worker] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.urbanwaste.wastemanagment.WasteManagmentApplicationTests]: WasteManagmentApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+01:15:10.150 [Test worker] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.urbanwaste.UrbanWasteApplication for test class com.urbanwaste.wastemanagment.WasteManagmentApplicationTests
 
   .   ____          _            __ _ _
  /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
@@ -14,10 +14,14 @@
 
  :: Spring Boot ::                (v4.0.0)
 
-2025-12-10T15:58:12.913+01:00  INFO 37516 --- [WasteManagment] [    Test worker] c.u.w.WasteManagmentApplicationTests     : Starting WasteManagmentApplicationTests using Java 22.0.2 with PID 37516 (started by clubi in B:\WasteManagement\backend)
-2025-12-10T15:58:12.915+01:00  INFO 37516 --- [WasteManagment] [    Test worker] c.u.w.WasteManagmentApplicationTests     : No active profile set, falling back to 1 default profile: "default"
-2025-12-10T15:58:13.891+01:00  INFO 37516 --- [WasteManagment] [    Test worker] o.s.v.b.OptionalValidatorFactoryBean     : Failed to set up a Bean Validation provider: jakarta.validation.NoProviderFoundException: Unable to create a Configuration, because no Jakarta Validation provider could be found. Add a provider like Hibernate Validator (RI) to your classpath.
-2025-12-10T15:58:14.234+01:00  INFO 37516 --- [WasteManagment] [    Test worker] c.u.w.WasteManagmentApplicationTests     : Started WasteManagmentApplicationTests in 1.587 seconds (process running for 2.64)
+2025-12-11T01:15:10.580+01:00  INFO 3484 --- [WasteManagment] [    Test worker] c.u.w.WasteManagmentApplicationTests     : Starting WasteManagmentApplicationTests using Java 22.0.2 with PID 3484 (started by clubi in B:\WasteManagement\backend)
+2025-12-11T01:15:10.580+01:00  INFO 3484 --- [WasteManagment] [    Test worker] c.u.w.WasteManagmentApplicationTests     : No active profile set, falling back to 1 default profile: "default"
+[AdminService] Loading admins from XML file: admins.xml
+[AdminService] Loaded 2 admins from admins.xml
+[EmployeeService] Loading employees from XML file: employees.xml
+[EmployeeService] Loaded 2 employees from employees.xml
+2025-12-11T01:15:11.749+01:00  INFO 3484 --- [WasteManagment] [    Test worker] o.s.v.b.OptionalValidatorFactoryBean     : Failed to set up a Bean Validation provider: jakarta.validation.NoProviderFoundException: Unable to create a Configuration, because no Jakarta Validation provider could be found. Add a provider like Hibernate Validator (RI) to your classpath.
+2025-12-11T01:15:12.111+01:00  INFO 3484 --- [WasteManagment] [    Test worker] c.u.w.WasteManagmentApplicationTests     : Started WasteManagmentApplicationTests in 1.835 seconds (process running for 3.091)
 ]]></system-out>
   <system-err><![CDATA[Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
 WARNING: A Java agent has been loaded dynamically (C:\Users\clubi\.gradle\caches\modules-2\files-2.1\net.bytebuddy\byte-buddy-agent\1.17.8\f09415827a71be7ed621c7bd02550678f28bc81c\byte-buddy-agent-1.17.8.jar)

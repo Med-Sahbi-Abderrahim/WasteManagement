@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<techniciens>
+    <technicien>
+        <id>3</id>
+        <mail>technicien@ecoville.tn</mail>
+        <nom>Jean</nom>
+        <prenom>Technicien</prenom>
+        <telephone>21234567</telephone>
+        <password>1234</password>
+        <role>TECHNICIEN</role>
+    </technicien>
+    <technicien>
+        <id>4</id>
+        <mail>tech@ecoville.tn</mail>
+        <nom>ddd</nom>
+        <prenom>ldl</prenom>
+        <telephone>54125412</telephone>
+        <password>12345</password>
+        <role>TECHNICIEN</role>
+    </technicien>
+</techniciens>

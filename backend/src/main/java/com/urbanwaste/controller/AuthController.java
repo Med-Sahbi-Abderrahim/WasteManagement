@@ -27,19 +27,20 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         try {
-            Optional<Utilisateur> userOpt = authService.login(request.getMail(), request.getPassword());
-            
-            if (userOpt.isPresent()) {
-                Utilisateur user = userOpt.get();
-                return ResponseEntity.ok(new LoginResponse(
-                    user.getId(),
-                    user.getPrenom() + " " + user.getNom(),
-                    user.getRole()
-                ));
-            } else {
+            Utilisateur user = authService.login(request.getMail(), request.getPassword());
+            return ResponseEntity.ok(new LoginResponse(
+                user.getId(),
+                user.getPrenom() + " " + user.getNom(),
+                user.getRole()
+            ));
+        } catch (RuntimeException e) {
+            // Handle authentication failures
+            if (e.getMessage() != null && e.getMessage().contains("Identifiants incorrects")) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "Invalid credentials"));
             }
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", e.getMessage()));

@@ -3,6 +3,7 @@ package com.urbanwaste.service;
 import com.urbanwaste.model.Vehicule;
 import com.urbanwaste.model.VehiculesWrapper; // Assuming you have this wrapper model
 import com.urbanwaste.util.XMLHandler;
+import com.urbanwaste.exception.XMLValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -62,9 +63,9 @@ public class VehicleService {
     }
     
     /**
-     * Create new vehicle
+     * Create new vehicle - synchronized write operation
      */
-    public Vehicule createVehicle(Vehicule vehicle) throws JAXBException {
+    public synchronized Vehicule createVehicle(Vehicule vehicle) throws JAXBException, XMLValidationException {
         VehiculesWrapper wrapper = xmlHandler.loadFromXML(VEHICLES_FILE, VehiculesWrapper.class);
         
         // Ensure wrapper and list are initialized
@@ -96,9 +97,9 @@ public class VehicleService {
     }
     
     /**
-     * Update existing vehicle
+     * Update existing vehicle - synchronized write operation
      */
-    public Optional<Vehicule> updateVehicle(int id, Vehicule updatedVehicle) throws JAXBException {
+    public synchronized Optional<Vehicule> updateVehicle(int id, Vehicule updatedVehicle) throws JAXBException, XMLValidationException {
         VehiculesWrapper wrapper = xmlHandler.loadFromXML(VEHICLES_FILE, VehiculesWrapper.class);
         
         // Ensure wrapper and list are initialized
@@ -130,9 +131,9 @@ public class VehicleService {
     }
     
     /**
-     * Delete vehicle
+     * Delete vehicle - synchronized write operation
      */
-    public boolean deleteVehicle(int id) throws JAXBException {
+    public synchronized boolean deleteVehicle(int id) throws JAXBException, XMLValidationException {
         VehiculesWrapper wrapper = xmlHandler.loadFromXML(VEHICLES_FILE, VehiculesWrapper.class);
         
         // Ensure wrapper and list are initialized
@@ -162,5 +163,64 @@ public class VehicleService {
         return getAllVehicles().stream()
             .filter(v -> status.equalsIgnoreCase(v.getEtat()))
             .collect(Collectors.toList());
+    }
+    
+    /**
+     * Update vehicle status - synchronized to prevent race conditions
+     * Valid statuses: DISPONIBLE, EN_PANNE, EN_REPARATION
+     */
+    public synchronized Optional<Vehicule> updateVehicleStatus(int id, String newStatus) throws JAXBException, XMLValidationException {
+        // Validate status
+        if (!isValidStatus(newStatus)) {
+            throw new IllegalArgumentException("Invalid status: " + newStatus + ". Must be DISPONIBLE, EN_PANNE, or EN_REPARATION");
+        }
+        
+        VehiculesWrapper wrapper = xmlHandler.loadFromXML(VEHICLES_FILE, VehiculesWrapper.class);
+        
+        // Ensure wrapper and list are initialized
+        if (wrapper == null) {
+            wrapper = new VehiculesWrapper();
+        }
+        List<Vehicule> vehicles = wrapper.getVehicules();
+        if (vehicles == null) {
+            vehicles = new ArrayList<>();
+            wrapper.setVehicules(vehicles);
+        }
+        
+        Optional<Vehicule> existing = vehicles.stream()
+            .filter(v -> v.getId() == id)
+            .findFirst();
+        
+        if (existing.isEmpty()) {
+            return Optional.empty();
+        }
+        
+        Vehicule vehicle = existing.get();
+        String oldStatus = vehicle.getStatut() != null ? vehicle.getStatut() : vehicle.getEtat();
+        
+        // Update status
+        vehicle.setStatut(newStatus);
+        vehicle.setEtat(newStatus);
+        
+        // Update disponibilite based on status
+        vehicle.setDisponibilite("DISPONIBLE".equals(newStatus));
+        
+        vehicles.removeIf(v -> v.getId() == id);
+        vehicles.add(vehicle);
+        
+        wrapper.setVehicules(vehicles);
+        xmlHandler.saveToXML(wrapper, VEHICLES_FILE);
+        
+        return Optional.of(vehicle);
+    }
+    
+    /**
+     * Validate status value
+     */
+    private boolean isValidStatus(String status) {
+        if (status == null) return false;
+        return "DISPONIBLE".equals(status) || 
+               "EN_PANNE".equals(status) || 
+               "EN_REPARATION".equals(status);
     }
 }

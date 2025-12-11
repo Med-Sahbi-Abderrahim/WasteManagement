@@ -27,6 +27,9 @@ interface WasteStore {
   tournees: any[];
   vehicules: Vehicule[];
   employes: Employe[];
+  admins: any[];
+  superviseurs: any[];
+  techniciens: any[];
   signalements: any[];
   notifications: any[];
   
@@ -41,11 +44,27 @@ interface WasteStore {
   
   // Employees Actions
   fetchEmployes: () => Promise<void>;
-  addEmploye: (employe: Employe) => Promise<void>;
+  addEmploye: (employe: Employe & { motDePasse?: string }) => Promise<void>;
   updateEmploye: (id: string, updates: Partial<Employe>) => Promise<void>;
   removeEmploye: (id: string) => Promise<void>;
   exportEmployesXML: () => void;
   importEmployesXML: (xmlString: string) => void;
+  
+  // Admins Actions
+  fetchAdmins: () => Promise<void>;
+  addAdmin: (admin: { nom: string; prenom: string; mail: string; telephone: string; motDePasse: string }) => Promise<void>;
+  
+  // Superviseurs Actions
+  fetchSuperviseurs: () => Promise<void>;
+  addSuperviseur: (superviseur: { nom: string; prenom: string; mail: string; telephone: string; motDePasse: string }) => Promise<void>;
+  
+  // Techniciens Actions
+  fetchTechniciens: () => Promise<void>;
+  addTechnicien: (technicien: { nom: string; prenom: string; mail: string; telephone: string; motDePasse: string }) => Promise<void>;
+  
+  // Generic User Actions (route based on role)
+  updateUser: (id: string | number, data: any, role: string) => Promise<void>;
+  deleteUser: (id: string | number, role: string) => Promise<void>;
   
   // Vehicles Actions
   fetchVehicules: () => Promise<void>;
@@ -58,6 +77,13 @@ interface WasteStore {
   fetchTournees: () => Promise<void>;
   addTournee: (tournee: any) => Promise<void>;
   updateTourneeStatut?: (id: string, statut: 'PLANIFIEE' | 'EN_COURS' | 'TERMINEE' | string) => Promise<void>;
+  
+  // Signalements Actions
+  fetchSignalements: () => Promise<void>;
+  addSignalement: (signalement: any) => Promise<void>;
+  exportSignalementsXML: () => void;
+  importSignalementsXML: (xmlString: string) => void;
+
 }
 
 export const useWasteStore = create<WasteStore>((set, get) => ({
@@ -67,6 +93,9 @@ export const useWasteStore = create<WasteStore>((set, get) => ({
   tournees: [],
   vehicules: [],
   employes: [],
+  admins: [],
+  superviseurs: [],
+  techniciens: [],
   signalements: [],
   notifications: [],
   addNotification: undefined,
@@ -190,6 +219,7 @@ export const useWasteStore = create<WasteStore>((set, get) => ({
       prenom: employe.prenom.trim(),
       telephone: employe.telephone ? parseInt(employe.telephone.replace(/\D/g, '')) || 0 : 0,
       role: employe.role === 'CHAUFFEUR' ? 'CHAUFFEUR' : employe.role === 'SUPERVISEUR' ? 'SUPERVISEUR' : 'EMPLOYE',
+      motDePasse: employe.motDePasse || '1234', // Default password if not provided
       // Don't send disponible - it's not in Utilisateur, only in Employee subclass
       // The backend will handle it if needed
     };
@@ -263,6 +293,7 @@ export const useWasteStore = create<WasteStore>((set, get) => ({
         prenom: updated.prenom.trim(),
         telephone: updated.telephone ? parseInt(updated.telephone.replace(/\D/g, '')) || 0 : 0,
         role: updated.role === 'CHAUFFEUR' ? 'CHAUFFEUR' : updated.role === 'SUPERVISEUR' ? 'SUPERVISEUR' : 'EMPLOYE',
+        motDePasse: (updates as any).motDePasse || (updates as any).password || '1234',
         // Don't send disponible - it's not in Utilisateur base class
       };
       
@@ -566,6 +597,10 @@ export const useWasteStore = create<WasteStore>((set, get) => ({
       throw new Error('Employee not found');
     }
     
+    if (!points || points.length === 0) {
+      throw new Error('At least one collection point is required');
+    }
+    
     // Transform frontend format to backend format
     const backendTournee = {
       id: 0, // Backend will assign
@@ -573,8 +608,8 @@ export const useWasteStore = create<WasteStore>((set, get) => ({
       statut: tournee.statut || 'PLANIFIEE',
       employe: {
         id: Number(employee.id),
-        nom: employee.nom,
-        prenom: employee.prenom,
+        nom: employee.nom || '',
+        prenom: employee.prenom || '',
       },
       vehicle: {
         id: Number(vehicle.id),
@@ -582,7 +617,7 @@ export const useWasteStore = create<WasteStore>((set, get) => ({
       },
       pointsCollecte: points.map(p => ({
         id: p.id,
-        localisation: p.localisation,
+        localisation: p.localisation || '',
       })),
       heureDebut: tournee.heureDebut || '',
       heureFin: tournee.heureFin || '',
@@ -702,4 +737,328 @@ export const useWasteStore = create<WasteStore>((set, get) => ({
       throw error;
     }
   },
+  
+  // Signalements Actions
+  fetchSignalements: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      console.log('[WasteStore] Fetching signalements from /api/signalements...');
+      const response = await api.get('/signalements');
+      const signalements = response.data || [];
+      console.log('[WasteStore] Signalements fetched successfully:', signalements);
+      set({ signalements, isLoading: false });
+    } catch (error: any) {
+      console.error('[WasteStore] Fetch Signalements API Error:', error);
+      set({ 
+        error: error.response?.data?.error || error.message || 'Failed to fetch signalements', 
+        isLoading: false 
+      });
+    }
+  },
+  
+  addSignalement: async (signalement: any) => {
+    set({ isLoading: true, error: null });
+    try {
+      console.log('[WasteStore] Creating signalement:', signalement);
+      const response = await api.post('/signalements', signalement);
+      const createdSignalement = response.data;
+      console.log('[WasteStore] Signalement created successfully:', createdSignalement);
+      
+      set(state => ({ 
+        signalements: [...state.signalements, createdSignalement], 
+        isLoading: false 
+      }));
+    } catch (error: any) {
+      console.error('[WasteStore] Create Signalement API Error:', error);
+      set({ 
+        error: error.response?.data?.error || error.message || 'Failed to create signalement', 
+        isLoading: false 
+      });
+      throw error;
+    }
+  },
+  
+  exportSignalementsXML: () => {
+    const { signalements } = get();
+    // !!! ASSUME generateSignalementsXML exists in '../utils/xml'
+    // const xml = generateSignalementsXML(signalements);
+    const xml = ``; // Placeholder
+    const blob = new Blob([xml], { type: 'application/xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'signalements.xml';
+    a.click();
+    URL.revokeObjectURL(url);
+  },
+
+  importSignalementsXML: (xmlString: string) => {
+    try {
+      // !!! ASSUME parseSignalementsXML exists in '../utils/xml'
+      // const parsed = parseSignalementsXML(xmlString);
+      // Placeholder: In a real app, this would be the actual logic
+      console.log('Attempting to parse Signalements XML...');
+      const parsed = []; // Should be actual parsed data
+      set({ signalements: parsed });
+    } catch (error) {
+      console.error('Failed to parse signalements XML:', error);
+      set({ error: 'Failed to import signalements XML' });
+    }
+  },
+  
+  // Admins Actions
+  fetchAdmins: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await api.get('/admins');
+      const admins = response.data || [];
+      set({ admins, isLoading: false });
+    } catch (error: any) {
+      set({ 
+        error: error.response?.data?.error || 'Failed to fetch admins', 
+        isLoading: false 
+      });
+    }
+  },
+  
+  addAdmin: async (admin) => {
+    set({ isLoading: true, error: null });
+    try {
+      const backendAdmin = {
+        id: 0,
+        mail: admin.mail,
+        nom: admin.nom.trim(),
+        prenom: admin.prenom.trim(),
+        telephone: parseInt(admin.telephone.replace(/\D/g, '')) || 0,
+        motDePasse: admin.motDePasse,
+        role: 'ADMIN',
+      };
+      
+      const created = await api.post('/admins', backendAdmin);
+      set(state => ({ 
+        admins: [...state.admins, created.data],
+        isLoading: false 
+      }));
+    } catch (error: any) {
+      set({ 
+        error: error.response?.data?.error || 'Failed to create admin', 
+        isLoading: false 
+      });
+      throw error;
+    }
+  },
+  
+  // Superviseurs Actions
+  fetchSuperviseurs: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await api.get('/superviseurs');
+      const superviseurs = response.data || [];
+      set({ superviseurs, isLoading: false });
+    } catch (error: any) {
+      set({ 
+        error: error.response?.data?.error || 'Failed to fetch superviseurs', 
+        isLoading: false 
+      });
+    }
+  },
+  
+  addSuperviseur: async (superviseur) => {
+    set({ isLoading: true, error: null });
+    try {
+      const backendSuperviseur = {
+        id: 0,
+        mail: superviseur.mail,
+        nom: superviseur.nom.trim(),
+        prenom: superviseur.prenom.trim(),
+        telephone: parseInt(superviseur.telephone.replace(/\D/g, '')) || 0,
+        motDePasse: superviseur.motDePasse,
+        role: 'SUPERVISEUR',
+      };
+      
+      const created = await api.post('/superviseurs', backendSuperviseur);
+      set(state => ({ 
+        superviseurs: [...state.superviseurs, created.data],
+        isLoading: false 
+      }));
+    } catch (error: any) {
+      set({ 
+        error: error.response?.data?.error || 'Failed to create superviseur', 
+        isLoading: false 
+      });
+      throw error;
+    }
+  },
+  
+  // Techniciens Actions
+  fetchTechniciens: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await api.get('/techniciens');
+      const techniciens = response.data || [];
+      set({ techniciens, isLoading: false });
+    } catch (error: any) {
+      set({ 
+        error: error.response?.data?.error || 'Failed to fetch techniciens', 
+        isLoading: false 
+      });
+    }
+  },
+  
+  addTechnicien: async (technicien) => {
+    set({ isLoading: true, error: null });
+    try {
+      const backendTechnicien = {
+        id: 0,
+        mail: technicien.mail,
+        nom: technicien.nom.trim(),
+        prenom: technicien.prenom.trim(),
+        telephone: parseInt(technicien.telephone.replace(/\D/g, '')) || 0,
+        motDePasse: technicien.motDePasse,
+        role: 'TECHNICIEN',
+      };
+      
+      const created = await api.post('/techniciens', backendTechnicien);
+      set(state => ({ 
+        techniciens: [...state.techniciens, created.data],
+        isLoading: false 
+      }));
+    } catch (error: any) {
+      set({ 
+        error: error.response?.data?.error || 'Failed to create technicien', 
+        isLoading: false 
+      });
+      throw error;
+    }
+  },
+  
+  // Generic User Actions
+  updateUser: async (id, data, role) => {
+    set({ isLoading: true, error: null });
+    try {
+      const userId = Number(id);
+      const normalizedRole = role.toUpperCase();
+      
+      // Prepare backend payload
+      const backendUser = {
+        id: userId,
+        mail: data.mail || data.email || '',
+        nom: data.nom || data.nom || '',
+        prenom: data.prenom || data.prenom || '',
+        telephone: data.telephone ? parseInt(String(data.telephone).replace(/\D/g, '')) || 0 : 0,
+        motDePasse: data.motDePasse || data.password || '1234',
+        role: normalizedRole,
+      };
+      
+      // Ensure telephone is not 0
+      if (backendUser.telephone === 0) {
+        backendUser.telephone = 1000000000;
+      }
+      
+      // Ensure mail is not empty
+      if (!backendUser.mail || backendUser.mail.trim() === '') {
+        backendUser.mail = `${backendUser.prenom.toLowerCase()}.${backendUser.nom.toLowerCase()}@wastemanagement.com`;
+      }
+      
+      let response;
+      switch (normalizedRole) {
+        case 'ADMIN':
+          response = await api.put(`/admins/${userId}`, backendUser);
+          set(state => ({
+            admins: state.admins.map((u: any) => String(u.id) === String(id) ? response.data : u),
+            isLoading: false
+          }));
+          break;
+        case 'SUPERVISEUR':
+          response = await api.put(`/superviseurs/${userId}`, backendUser);
+          set(state => ({
+            superviseurs: state.superviseurs.map((u: any) => String(u.id) === String(id) ? response.data : u),
+            isLoading: false
+          }));
+          break;
+        case 'TECHNICIEN':
+          response = await api.put(`/techniciens/${userId}`, backendUser);
+          set(state => ({
+            techniciens: state.techniciens.map((u: any) => String(u.id) === String(id) ? response.data : u),
+            isLoading: false
+          }));
+          break;
+        case 'EMPLOYE':
+        case 'CHAUFFEUR':
+        case 'EBOUEUR':
+          response = await api.put(`/employees/${userId}`, backendUser);
+          set(state => ({
+            employes: state.employes.map((u: any) => String(u.id) === String(id) ? {
+              ...u,
+              id: String(response.data.id),
+              prenom: response.data.prenom || u.prenom,
+              nom: response.data.nom || u.nom,
+              email: response.data.mail || u.email,
+              telephone: String(response.data.telephone || u.telephone),
+            } : u),
+            isLoading: false
+          }));
+          break;
+        default:
+          throw new Error(`Unknown role: ${role}`);
+      }
+    } catch (error: any) {
+      console.error(`Failed to update ${role}:`, error);
+      set({
+        error: error.response?.data?.error || `Failed to update ${role}`,
+        isLoading: false
+      });
+      throw error;
+    }
+  },
+  
+  deleteUser: async (id, role) => {
+    set({ isLoading: true, error: null });
+    try {
+      const userId = Number(id);
+      const normalizedRole = role.toUpperCase();
+      
+      switch (normalizedRole) {
+        case 'ADMIN':
+          await api.delete(`/admins/${userId}`);
+          set(state => ({
+            admins: state.admins.filter((u: any) => String(u.id) !== String(id)),
+            isLoading: false
+          }));
+          break;
+        case 'SUPERVISEUR':
+          await api.delete(`/superviseurs/${userId}`);
+          set(state => ({
+            superviseurs: state.superviseurs.filter((u: any) => String(u.id) !== String(id)),
+            isLoading: false
+          }));
+          break;
+        case 'TECHNICIEN':
+          await api.delete(`/techniciens/${userId}`);
+          set(state => ({
+            techniciens: state.techniciens.filter((u: any) => String(u.id) !== String(id)),
+            isLoading: false
+          }));
+          break;
+        case 'EMPLOYE':
+        case 'CHAUFFEUR':
+        case 'EBOUEUR':
+          await api.delete(`/employees/${userId}`);
+          set(state => ({
+            employes: state.employes.filter((u: any) => String(u.id) !== String(id)),
+            isLoading: false
+          }));
+          break;
+        default:
+          throw new Error(`Unknown role: ${role}`);
+      }
+    } catch (error: any) {
+      console.error(`Failed to delete ${role}:`, error);
+      set({
+        error: error.response?.data?.error || `Failed to delete ${role}`,
+        isLoading: false
+      });
+      throw error;
+    }
+  }
 }));

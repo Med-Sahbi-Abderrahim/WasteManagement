@@ -96,6 +96,18 @@ export const WasteMap: React.FC<Props> = ({ points, height = '400px' }) => {
   // Sfax Center
   const center: [number, number] = [34.7406, 10.7603];
   
+  const [selectedFilter, setSelectedFilter] = useState<string>('Tous');
+  
+  // Filter points based on selected filter
+  const filteredPoints = points.filter(point => {
+    if (selectedFilter === 'Tous') return true;
+    const typeNom = point.typeDechet?.nom || '';
+    if (selectedFilter === 'Plastique') return typeNom === 'PLASTIQUE';
+    if (selectedFilter === 'Verre') return typeNom === 'VERRE';
+    if (selectedFilter === 'Mixte') return typeNom === 'MIXTE' || !typeNom;
+    return true;
+  });
+  
   const [vehicles, setVehicles] = useState<Vehicle[]>([
     { id: 'v1', lat: 34.7450, lng: 10.7650, name: 'Camion 101', type: 'Benne', target: [34.7350, 10.7500] },
     { id: 'v2', lat: 34.7300, lng: 10.7500, name: 'Camion 102', type: 'Recyclage', target: [34.7600, 10.7550] },
@@ -139,56 +151,82 @@ export const WasteMap: React.FC<Props> = ({ points, height = '400px' }) => {
   }, []);
 
   return (
-    <MapContainer center={center} zoom={13} style={{ height, width: '100%', borderRadius: '0.75rem' }}>
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
+    <div style={{ position: 'relative', height, width: '100%' }}>
+      {/* Filter Buttons */}
+      <div className="absolute top-4 left-4 z-[1000] flex gap-2 flex-wrap">
+        {['Tous', 'Plastique', 'Verre', 'Mixte'].map(filter => (
+          <button
+            key={filter}
+            onClick={() => setSelectedFilter(filter)}
+            className={`px-4 py-2 rounded-lg font-medium text-sm shadow-md transition-all ${
+              selectedFilter === filter
+                ? 'bg-green-600 text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            {filter}
+          </button>
+        ))}
+      </div>
       
-      {/* Collection Points */}
-      {points.map(point => (
-        <Marker 
-          key={point.id} 
-          position={[point.latitude, point.longitude]}
-          icon={createWasteIcon(point.type, point.niveauRemplissage)}
-        >
-          <Popup>
-            <div className="p-2 min-w-[200px]">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-bold text-gray-900">{point.type}</h3>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                  point.etat === 'ACTIF' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                }`}>
-                  {point.etat}
-                </span>
-              </div>
-              <p className="text-sm text-gray-600 mb-3">{point.adresse}</p>
-              
-              <div className="space-y-1">
-                <div className="flex justify-between text-xs text-gray-500">
-                  <span>Remplissage</span>
-                  <span className="font-bold">{point.niveauRemplissage}%</span>
+      <MapContainer center={center} zoom={13} style={{ height, width: '100%', borderRadius: '0.75rem' }}>
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        
+        {/* Collection Points */}
+        {filteredPoints.map(point => {
+          const typeNom = (point.typeDechet?.nom || 'MIXTE').toUpperCase();
+          const fillLevel = point.niveauRemplissage || 0;
+          const status = point.etatConteneur || 'ACTIF';
+          
+          return (
+            <Marker 
+              key={point.id} 
+              position={[point.latitude || 0, point.longitude || 0]}
+              icon={createWasteIcon(typeNom, fillLevel)}
+            >
+              <Popup>
+                <div className="p-3 min-w-[220px]">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-bold text-gray-900">{typeNom}</h3>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                      status === 'ACTIF' ? 'bg-green-100 text-green-700' : 
+                      status === 'MAINTENANCE' ? 'bg-yellow-100 text-yellow-700' : 
+                      'bg-red-100 text-red-700'
+                    }`}>
+                      {status === 'ACTIF' ? 'Actif' : status === 'MAINTENANCE' ? 'Maintenance' : 'Hors service'}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-3">{point.localisation || 'Adresse non disponible'}</p>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs text-gray-500">
+                      <span>Niveau de remplissage</span>
+                      <span className="font-bold">{fillLevel.toFixed(0)}%</span>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-2.5">
+                      <div 
+                        className={`h-2.5 rounded-full transition-all duration-500 ${
+                          fillLevel > 80 ? 'bg-red-500' : 
+                          fillLevel > 50 ? 'bg-yellow-500' : 'bg-green-500'
+                        }`}
+                        style={{ width: `${Math.min(fillLevel, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                  
+                  {point.dateDerniereCollecte && (
+                    <p className="text-xs text-gray-400 mt-3 pt-2 border-t border-gray-100">
+                      Dernière collecte : {new Date(point.dateDerniereCollecte).toLocaleDateString('fr-FR')}
+                    </p>
+                  )}
                 </div>
-                <div className="w-full bg-gray-100 rounded-full h-2">
-                  <div 
-                    className={`h-2 rounded-full transition-all duration-500 ${
-                      point.niveauRemplissage > 80 ? 'bg-red-500' : 
-                      point.niveauRemplissage > 50 ? 'bg-yellow-500' : 'bg-green-500'
-                    }`}
-                    style={{ width: `${point.niveauRemplissage}%` }}
-                  />
-                </div>
-              </div>
-              
-              {point.derniereCollecte && (
-                <p className="text-xs text-gray-400 mt-3 pt-2 border-t border-gray-100">
-                  Dernière collecte : {point.derniereCollecte}
-                </p>
-              )}
-            </div>
-          </Popup>
-        </Marker>
-      ))}
+              </Popup>
+            </Marker>
+          );
+        })}
 
       {/* Moving Vehicles */}
       {vehicles.map(vehicle => (
@@ -210,7 +248,8 @@ export const WasteMap: React.FC<Props> = ({ points, height = '400px' }) => {
           </Popup>
         </Marker>
       ))}
-    </MapContainer>
+      </MapContainer>
+    </div>
   );
 };
 export default WasteMap;

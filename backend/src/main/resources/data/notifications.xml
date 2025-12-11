@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<notifications>
+    <notification>
+        <id>1</id>
+        <titre>Véhicule en panne</titre>
+        <message>Le véhicule 125TN125 (ID: 3) est en panne et nécessite une intervention.</message>
+        <roleCible>TECHNICIEN</roleCible>
+        <dateCreation>2025-12-11T00:28:28.443+01:00</dateCreation>
+        <lue>true</lue>
+        <vehiculeId>3</vehiculeId>
+        <type>VEHICULE_PANNE</type>
+    </notification>
+</notifications>

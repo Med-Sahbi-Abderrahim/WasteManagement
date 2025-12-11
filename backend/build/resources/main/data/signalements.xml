@@ -9,4 +9,13 @@
         <dateSignalement>2025-12-10T15:48:02.136+01:00</dateSignalement>
         <statut>NOUVEAU</statut>
     </signalement>
+    <signalement>
+        <id>2</id>
+        <type>ACCIDENT</type>
+        <description>flash</description>
+        <pointCollecteId>2</pointCollecteId>
+        <employeId>5</employeId>
+        <dateSignalement>2025-12-10T23:56:55.977+01:00</dateSignalement>
+        <statut>NOUVEAU</statut>
+    </signalement>
 </signalements>

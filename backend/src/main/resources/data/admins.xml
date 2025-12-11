@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<admins>
+    <admin>
+        <id>1</id>
+        <mail>admin@ecoville.tn</mail>
+        <nom>Admin</nom>
+        <prenom>Municipal</prenom>
+        <telephone>20123456</telephone>
+        <password>1234</password>
+        <role>ADMIN</role>
+    </admin>
+    <admin>
+        <id>2</id>
+        <mail>admin1@ecoville.tn</mail>
+        <nom>aaa</nom>
+        <prenom>bbb</prenom>
+        <telephone>36523652</telephone>
+        <password>12345</password>
+        <role>ADMIN</role>
+    </admin>
+</admins>

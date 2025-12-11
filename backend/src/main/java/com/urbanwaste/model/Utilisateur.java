@@ -6,12 +6,11 @@ import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 
-// The base class usually doesn't need @XmlRootElement or @JacksonXmlRootElement
-// unless it's intended to be the root of an XML document, but we'll add the Jackson one for consistency.
 @XmlAccessorType(XmlAccessType.FIELD)
-@JacksonXmlRootElement(localName = "utilisateur") // Added Jackson annotation
-@JsonIgnoreProperties(ignoreUnknown = true) // Ignore unknown properties like "disponible" from frontend
+@JacksonXmlRootElement(localName = "utilisateur")
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Utilisateur {
+
     @XmlElement(required = true)
     private int id;
 
@@ -27,24 +26,25 @@ public class Utilisateur {
     @XmlElement(required = true)
     private int telephone;
 
-    @XmlElement
-    private String password;
+    // We use "password" internally to fix the XML/JSON conflict
+    @XmlElement(name = "password", required = true)
+    private String password; 
 
     @XmlElement
     private String role;
     
-    // Constructors
     public Utilisateur() {}
     
-    public Utilisateur(int id, String mail, String nom, String prenom, int telephone) {
+    public Utilisateur(int id, String mail, String nom, String prenom, int telephone, String password) {
         this.id = id;
         this.mail = mail;
         this.nom = nom;
         this.prenom = prenom;
         this.telephone = telephone;
+        this.password = password;
     }
     
-    // Getters and Setters
+    // Standard Getters/Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
     
@@ -60,9 +60,12 @@ public class Utilisateur {
     public int getTelephone() { return telephone; }
     public void setTelephone(int telephone) { this.telephone = telephone; }
     
-    public String getPassword() { return password; }
-    public void setPassword(String password) { this.password = password; }
-    
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
+
+    public String getMotDePasse() { return password; }
+    public void setMotDePasse(String motDePasse) { this.password = motDePasse; }
 }

@@ -1,5 +1,6 @@
 package com.urbanwaste.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
@@ -17,6 +18,7 @@ public class Tournee {
     private int id;
 
     @XmlElement(required = true)
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Date datePlanifiee;
 
     @XmlElement(required = true)

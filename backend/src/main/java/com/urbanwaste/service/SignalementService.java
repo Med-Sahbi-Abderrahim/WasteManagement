@@ -3,6 +3,7 @@ package com.urbanwaste.service;
 import com.urbanwaste.model.Signalement;
 import com.urbanwaste.model.SignalementsWrapper;
 import com.urbanwaste.util.XMLHandler;
+import com.urbanwaste.exception.XMLValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -40,7 +41,7 @@ public class SignalementService {
         }
     }
 
-    public Signalement create(Signalement s) throws JAXBException {
+    public Signalement create(Signalement s) throws JAXBException, XMLValidationException {
         SignalementsWrapper wrapper = xmlHandler.loadFromXML(SIGNALEMENTS_FILE, SignalementsWrapper.class);
         if (wrapper == null || wrapper.getSignalements() == null) {
             wrapper = new SignalementsWrapper();
@@ -74,7 +75,7 @@ public class SignalementService {
             .collect(Collectors.toList());
     }
 
-    public Optional<Signalement> updateStatut(int id, String newStatut) throws JAXBException {
+    public Optional<Signalement> updateStatut(int id, String newStatut) throws JAXBException, XMLValidationException {
         SignalementsWrapper wrapper = xmlHandler.loadFromXML(SIGNALEMENTS_FILE, SignalementsWrapper.class);
         if (wrapper == null || wrapper.getSignalements() == null) {
             return Optional.empty();

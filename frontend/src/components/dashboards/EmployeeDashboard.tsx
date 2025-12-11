@@ -4,7 +4,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useWasteStore } from '../../store/wasteStore';
 import { useAuthStore } from '../../store/authStore';
 import { Flame, AlertTriangle, MapPin, Check, Play, StopCircle } from 'lucide-react';
-import api from '../../services/api';
 
 export const EmployeeDashboard: React.FC = () => {
   const {
@@ -14,6 +13,7 @@ export const EmployeeDashboard: React.FC = () => {
     fetchPoints,
     updatePoint,
     updateTourneeStatut,
+    addSignalement,
   } = useWasteStore();
   const { user } = useAuthStore();
 
@@ -67,13 +67,13 @@ export const EmployeeDashboard: React.FC = () => {
   };
 
   const handleIncident = async () => {
-    if (!selectedTour || !user) return;
+    if (!selectedTour || !user || !addSignalement) return;
     try {
-      await api.post('/signalements', {
+      await addSignalement({
         type: incidentType,
         description: incidentMsg || 'Incident signalé',
         pointCollecteId: selectedTour.pointsCollecteIds?.[0] ? Number(selectedTour.pointsCollecteIds[0]) : null,
-        employeId: user.id,
+        employeId: Number(user.id),
       });
       setIncidentMsg('');
       setShowIncident(false);

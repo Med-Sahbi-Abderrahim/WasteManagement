@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<superviseurs>
+    <superviseur>
+        <id>2</id>
+        <mail>superviseur@ecoville.tn</mail>
+        <nom>Superviseur</nom>
+        <prenom>Général</prenom>
+        <telephone>20987654</telephone>
+        <password>1234</password>
+        <role>SUPERVISEUR</role>
+    </superviseur>
+    <superviseur>
+        <id>3</id>
+        <mail>sup@ecoville.tn</mail>
+        <nom>dddd</nom>
+        <prenom>dd</prenom>
+        <telephone>25412541</telephone>
+        <password>12345</password>
+        <role>SUPERVISEUR</role>
+    </superviseur>
+</superviseurs>

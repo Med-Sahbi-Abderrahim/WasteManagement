@@ -1,10 +1,12 @@
 package com.urbanwaste.util;
 
 import com.urbanwaste.model.*;
+import com.urbanwaste.exception.XMLValidationException;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 // --- JAXB IS JAKARTA ---
 import jakarta.xml.bind.*;
@@ -13,6 +15,7 @@ import jakarta.xml.bind.*;
 import javax.xml.XMLConstants;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
 import javax.xml.transform.stream.StreamSource;
 
 import java.io.*;
@@ -35,15 +38,87 @@ public class XMLHandler {
     }
     
     /**
-     * Save object to XML
+     * Determine XSD file name based on entity type and XML file name
      */
-    public <T> void saveToXML(T object, String fileName, String xsdFileName) throws JAXBException, SAXException, IOException {
+    private String determineXsdFileName(String fileName, Class<?> entityClass) {
+        // Map XML files to their corresponding XSD files
+        if (fileName.contains("employees") || fileName.contains("employes")) {
+            return "employees.xsd";
+        } else if (fileName.contains("vehicules") || fileName.contains("vehicles")) {
+            return "vehicules.xsd";
+        } else if (fileName.contains("tournees") || fileName.contains("routes")) {
+            return "tournees.xsd";
+        } else if (fileName.contains("signalements")) {
+            return "signalements.xsd";
+        } else if (fileName.contains("notifications")) {
+            return "notifications.xsd";
+        }
+        
+        // Fallback: try to infer from class name
+        String className = entityClass.getSimpleName().toLowerCase();
+        if (className.contains("employee") || className.contains("employe")) {
+            return "employees.xsd";
+        } else if (className.contains("vehicule") || className.contains("vehicle")) {
+            return "vehicules.xsd";
+        } else if (className.contains("tournee") || className.contains("route")) {
+            return "tournees.xsd";
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Validate XML against XSD schema
+     */
+    private void validateXML(Object object, String xsdFileName) throws XMLValidationException, JAXBException, SAXException, IOException {
+        if (xsdFileName == null || xsdFileName.isEmpty()) {
+            return; // No validation if no XSD specified
+        }
+        
+        Schema schema = getOrLoadSchema(xsdFileName);
+        Validator validator = schema.newValidator();
+        
+        // Marshal to temporary stream for validation
+        JAXBContext context = getOrCreateContext(object.getClass());
+        Marshaller marshaller = context.createMarshaller();
+        
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            marshaller.marshal(object, baos);
+            
+            // Validate the XML
+            try (ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray())) {
+                validator.validate(new StreamSource(bais));
+            } catch (SAXParseException e) {
+                throw new XMLValidationException(
+                    String.format("XML validation failed at line %d, column %d: %s", 
+                        e.getLineNumber(), e.getColumnNumber(), e.getMessage()), e);
+            } catch (SAXException e) {
+                throw new XMLValidationException("XML validation failed: " + e.getMessage(), e);
+            }
+        }
+    }
+    
+    /**
+     * Save object to XML with automatic XSD validation
+     */
+    public <T> void saveToXML(T object, String fileName, String xsdFileName) throws JAXBException, SAXException, IOException, XMLValidationException {
+        // Auto-determine XSD if not provided
+        if (xsdFileName == null || xsdFileName.isEmpty()) {
+            xsdFileName = determineXsdFileName(fileName, object.getClass());
+        }
+        
+        // Validate before saving
+        if (xsdFileName != null && !xsdFileName.isEmpty()) {
+            validateXML(object, xsdFileName);
+        }
+        
         JAXBContext context = getOrCreateContext(object.getClass());
         Marshaller marshaller = context.createMarshaller();
         
         marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
         marshaller.setProperty(Marshaller.JAXB_ENCODING, "UTF-8");
         
+        // Set schema for marshalling (will also validate during marshalling)
         if (xsdFileName != null && !xsdFileName.isEmpty()) {
             Schema schema = getOrLoadSchema(xsdFileName);
             marshaller.setSchema(schema);
@@ -59,10 +134,21 @@ public class XMLHandler {
         
         try (FileOutputStream fos = new FileOutputStream(file)) {
             marshaller.marshal(object, fos);
+        } catch (MarshalException e) {
+            if (e.getLinkedException() instanceof SAXParseException) {
+                SAXParseException saxEx = (SAXParseException) e.getLinkedException();
+                throw new XMLValidationException(
+                    String.format("XML validation failed during marshalling at line %d, column %d: %s", 
+                        saxEx.getLineNumber(), saxEx.getColumnNumber(), saxEx.getMessage()), saxEx);
+            }
+            throw e;
         }
     }
     
-    public <T> void saveToXML(T object, String fileName) throws JAXBException {
+    /**
+     * Save object to XML with automatic XSD validation (convenience method)
+     */
+    public <T> void saveToXML(T object, String fileName) throws JAXBException, XMLValidationException {
         try {
             saveToXML(object, fileName, null);
         } catch (SAXException | IOException e) {
@@ -168,6 +254,12 @@ public class XMLHandler {
         classes.add(Tournee.class);
         classes.add(Signalement.class);
         classes.add(SignalementsWrapper.class);
+        classes.add(AdminsWrapper.class);
+        classes.add(SuperviseursWrapper.class);
+        classes.add(TechniciensWrapper.class);
+        classes.add(EmployeesWrapper.class);
+        classes.add(Notification.class);
+        classes.add(NotificationsWrapper.class);
         
         return classes.toArray(new Class<?>[0]);
     }

@@ -1,27 +1,23 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<items>
-    <item xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="employee">
-        <id>0</id>
-        <telephone>0</telephone>
-        <role>string</role>
-        <disponible>true</disponible>
-    </item>
-    <item xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="employee">
-        <id>1</id>
-        <mail>haha.sasa@wastemanagement.com</mail>
-        <nom>sasa</nom>
-        <prenom>haha</prenom>
-        <telephone>1000000000</telephone>
+<employes>
+    <employe>
+        <id>5</id>
+        <mail>emp@ecoville.tn</mail>
+        <nom>abc</nom>
+        <prenom>abc</prenom>
+        <telephone>21541254</telephone>
+        <password>12345</password>
         <role>EMPLOYE</role>
         <disponible>true</disponible>
-    </item>
-    <item xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="employee">
-        <id>2</id>
-        <mail>azerty.yuio@wastemanagement.com</mail>
-        <nom>yuio</nom>
-        <prenom>azerty</prenom>
-        <telephone>1000000000</telephone>
+    </employe>
+    <employe>
+        <id>6</id>
+        <mail>admin@ecoville.tn</mail>
+        <nom>paso</nom>
+        <prenom>maso</prenom>
+        <telephone>25412541</telephone>
+        <password>1234</password>
         <role>EMPLOYE</role>
         <disponible>true</disponible>
-    </item>
-</items>
+    </employe>
+</employes>

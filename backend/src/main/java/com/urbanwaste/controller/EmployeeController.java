@@ -2,6 +2,7 @@ package com.urbanwaste.controller;
 
 import com.urbanwaste.model.Utilisateur; // <--- FIX 1: Using the correct model class name
 import com.urbanwaste.service.EmployeeService;
+import com.urbanwaste.exception.XMLValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -60,6 +61,9 @@ public class EmployeeController {
         try {
             Utilisateur newEmployee = employeeService.createEmployee(employee);
             return ResponseEntity.status(HttpStatus.CREATED).body(newEmployee);
+        } catch (XMLValidationException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", e.getMessage()));
         } catch (JAXBException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", e.getMessage()));
@@ -77,6 +81,9 @@ public class EmployeeController {
                 ? ResponseEntity.ok(updatedEmployee.get())
                 : ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", "Employee not found"));
+        } catch (XMLValidationException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", e.getMessage()));
         } catch (JAXBException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", e.getMessage()));
@@ -94,6 +101,9 @@ public class EmployeeController {
                 ? ResponseEntity.ok(Map.of("message", "Employee deleted successfully"))
                 : ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", "Employee not found"));
+        } catch (XMLValidationException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", e.getMessage()));
         } catch (JAXBException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", e.getMessage()));

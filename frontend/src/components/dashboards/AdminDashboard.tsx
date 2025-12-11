@@ -11,7 +11,6 @@ import {
 import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import api from '../../services/api';
 
 // Fix icônes Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -54,18 +53,15 @@ const BarChart = ({ data, labels, title, color }: { data: number[]; labels: stri
 };
 
 export const AdminDashboard: React.FC = () => {
-  const { points, tournees, vehicules, employes, fetchPoints } = useWasteStore();
-  const [signalements, setSignalements] = useState<any[]>([]);
+  const { points, tournees, vehicules, employes, signalements, fetchPoints, fetchSignalements } = useWasteStore();
   const today = format(new Date(), 'EEEE dd MMMM yyyy', { locale: fr });
 
-  // Fetch points on mount
+  // Fetch points and signalements on mount
   useEffect(() => {
     console.log('[AdminDashboard] Component mounted, fetching points...');
     fetchPoints();
-    api.get('/signalements')
-      .then(res => setSignalements(res.data || []))
-      .catch(err => console.error('Failed to fetch signalements', err));
-  }, [fetchPoints]);
+    fetchSignalements();
+  }, [fetchPoints, fetchSignalements]);
 
   const stats = {
     remplissageMoyen: points.length > 0 ? Math.round(points.reduce((a, p) => a + p.niveauRemplissage, 0) / points.length) : 0,

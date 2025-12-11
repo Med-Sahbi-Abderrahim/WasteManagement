@@ -2,6 +2,7 @@ package com.urbanwaste.controller;
 
 import com.urbanwaste.model.Tournee; 
 import com.urbanwaste.service.RouteService;
+import com.urbanwaste.exception.XMLValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -59,9 +60,23 @@ public class RouteController {
         try {
             Tournee newRoute = routeService.createRoute(route);
             return ResponseEntity.status(HttpStatus.CREATED).body(newRoute);
-        } catch (JAXBException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("error", e.getMessage()));
+        } catch (XMLValidationException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", "XML validation failed", "details", e.getMessage()));
+        } catch (JAXBException e) {
+            e.printStackTrace(); // Log the full stack trace
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "XML processing error: " + e.getMessage(), 
+                             "cause", e.getCause() != null ? e.getCause().getMessage() : "Unknown"));
+        } catch (Exception e) {
+            e.printStackTrace(); // Log the full stack trace
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Unexpected error: " + e.getMessage(),
+                             "type", e.getClass().getSimpleName(),
+                             "cause", e.getCause() != null ? e.getCause().getMessage() : "Unknown"));
         }
     }
 
@@ -76,6 +91,9 @@ public class RouteController {
                 ? ResponseEntity.ok(updatedRoute.get())
                 : ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", "Route not found"));
+        } catch (XMLValidationException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", "XML validation failed", "details", e.getMessage()));
         } catch (JAXBException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", e.getMessage()));
@@ -93,6 +111,9 @@ public class RouteController {
                 ? ResponseEntity.ok(Map.of("message", "Route deleted successfully"))
                 : ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", "Route not found"));
+        } catch (XMLValidationException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", "XML validation failed", "details", e.getMessage()));
         } catch (JAXBException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", e.getMessage()));
