@@ -18,4 +18,22 @@
         <dateSignalement>2025-12-10T23:56:55.977+01:00</dateSignalement>
         <statut>NOUVEAU</statut>
     </signalement>
+    <signalement>
+        <id>3</id>
+        <type>ACCIDENT</type>
+        <description>X</description>
+        <pointCollecteId>2</pointCollecteId>
+        <employeId>6</employeId>
+        <dateSignalement>2025-12-11T11:10:24.849+01:00</dateSignalement>
+        <statut>NOUVEAU</statut>
+    </signalement>
+    <signalement>
+        <id>4</id>
+        <type>DEBORDEMENT</type>
+        <description>coucou je m'apelle sahbi </description>
+        <pointCollecteId>1</pointCollecteId>
+        <employeId>6</employeId>
+        <dateSignalement>2025-12-11T11:49:13.455+01:00</dateSignalement>
+        <statut>NOUVEAU</statut>
+    </signalement>
 </signalements>

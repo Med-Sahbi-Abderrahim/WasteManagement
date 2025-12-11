@@ -260,6 +260,7 @@ public class XMLHandler {
         classes.add(EmployeesWrapper.class);
         classes.add(Notification.class);
         classes.add(NotificationsWrapper.class);
+        classes.add(TourneesWrapper.class);
         
         return classes.toArray(new Class<?>[0]);
     }
@@ -287,5 +288,20 @@ public class XMLHandler {
             }
         });
         
+    }
+    
+    /**
+     * Marshal object to XML string
+     * Used for export endpoints and interoperability
+     */
+    public <T> String marshalToString(T object) throws JAXBException {
+        JAXBContext context = getOrCreateContext(object.getClass());
+        Marshaller marshaller = context.createMarshaller();
+        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+        marshaller.setProperty(Marshaller.JAXB_ENCODING, "UTF-8");
+        
+        StringWriter writer = new StringWriter();
+        marshaller.marshal(object, writer);
+        return writer.toString();
     }
 }

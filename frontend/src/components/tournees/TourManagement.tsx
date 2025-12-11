@@ -3,11 +3,13 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useWasteStore } from '../../store/wasteStore';
-import { Download, Upload, Flame, Zap, Plus } from 'lucide-react';
+import { useAuthStore } from '../../store/authStore';
+import { Download, Upload, Flame, Zap, Plus, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { AddTourModal } from './AddTourModal';
 
 export const TourList: React.FC = () => {
+  const { user } = useAuthStore();
   const { 
     tournees, 
     vehicules, 
@@ -15,6 +17,7 @@ export const TourList: React.FC = () => {
     points,
     signalements,
     addTournee,
+    deleteTournee,
     fetchTournees,
     fetchVehicules,
     fetchEmployes,
@@ -70,6 +73,19 @@ export const TourList: React.FC = () => {
       await fetchTournees();
     } catch (error) {
       console.error('Failed to add tournee:', error);
+    }
+  };
+
+  const handleDeleteTournee = async (id: string) => {
+    if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette tournée ?')) {
+      return;
+    }
+    try {
+      await deleteTournee(id);
+      await fetchTournees(); // Refresh list after deletion
+    } catch (error: any) {
+      console.error('Failed to delete tournee:', error);
+      alert(`Erreur: ${error.response?.data?.error || error.message || 'Impossible de supprimer la tournée'}`);
     }
   };
 
@@ -277,8 +293,19 @@ export const TourList: React.FC = () => {
                     <div><span className="text-gray-500">Dist</span><br /><b className="text-emerald-700">{tournee.distanceKm || '?'} km</b></div>
                   </div>
                 </div>
-                <div className="text-xl font-bold text-gray-700 ml-5">
-                  {tournee.heureDebut || '--:--'}
+                <div className="flex items-center gap-2">
+                  <div className="text-xl font-bold text-gray-700">
+                    {tournee.heureDebut || '--:--'}
+                  </div>
+                  {user?.role === 'ADMIN' && (
+                    <button
+                      onClick={() => handleDeleteTournee(tournee.id)}
+                      className="p-1.5 hover:bg-red-50 text-red-600 rounded transition"
+                      title="Supprimer la tournée"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

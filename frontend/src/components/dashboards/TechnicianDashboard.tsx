@@ -1,6 +1,6 @@
 // src/components/dashboard/TechnicianDashboard.tsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useWasteStore } from '../../store/wasteStore';
 import { Truck, Wrench, AlertTriangle, CheckCircle, History, Radio, Bell, X } from 'lucide-react';
 import api from '../../services/api';
@@ -39,7 +39,8 @@ export const TechnicianDashboard: React.FC = () => {
   useEffect(() => {
     fetchVehicules();
     fetchNotifications();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Intentionally empty - only run on mount
 
   const fetchNotifications = async () => {
     try {
@@ -109,21 +110,35 @@ export const TechnicianDashboard: React.FC = () => {
         status: backendStatus
       });
 
-      // Refresh vehicles list to get updated state from XML
-      await fetchVehicules();
-
-      // Refresh notifications in case a new one was created
-      await fetchNotifications();
-
-      alert(`État du véhicule ${veh.immatriculation} enregistré : ${status}`);
+      // Close modal and reset state BEFORE fetching to avoid DOM conflicts
+      const immatriculation = veh.immatriculation;
+      const statusDisplay = status; // Save status before resetting
       setShowModal(false);
       setCommentaire('');
       setStatus('BON');
       setSelectedVehicule(null);
+      setLoading(false); // Reset loading immediately after closing modal
+
+      // Use setTimeout to defer state updates until after modal is unmounted
+      // Use requestAnimationFrame to ensure DOM is stable before updating
+      requestAnimationFrame(() => {
+        setTimeout(async () => {
+          try {
+            // Refresh vehicles list to get updated state from XML
+            await fetchVehicules();
+
+            // Refresh notifications in case a new one was created
+            await fetchNotifications();
+
+            alert(`État du véhicule ${immatriculation} enregistré : ${statusDisplay}`);
+          } catch (error) {
+            console.error('Failed to refresh data:', error);
+          }
+        }, 150);
+      });
     } catch (error: any) {
       console.error('Failed to update vehicle status:', error);
       alert(`Erreur lors de la mise à jour : ${error.response?.data?.error || error.message}`);
-    } finally {
       setLoading(false);
     }
   };
@@ -184,9 +199,9 @@ export const TechnicianDashboard: React.FC = () => {
             </div>
           </div>
           <div className="divide-y">
-            {unreadNotifications.map(notif => (
+            {unreadNotifications.map((notif, index) => (
               <div 
-                key={notif.id} 
+                key={`notif-${notif.id}-${index}`} 
                 className={`p-4 hover:bg-gray-50 ${notif.lue ? 'opacity-60' : ''}`}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -266,10 +281,12 @@ export const TechnicianDashboard: React.FC = () => {
         </div>
 
         <div className="divide-y">
-          {vehicules.map(veh => {
+          {vehicules.map((veh) => {
             const mappedStatus = mapStatusFromBackend(veh.statut || veh.etat || 'DISPONIBLE');
+            const statusIcon = getStatusIcon(mappedStatus);
+            const statusText = getBackendStatusDisplay(veh.statut || veh.etat || 'DISPONIBLE');
             return (
-              <div key={veh.id} className="p-4 flex items-center justify-between hover:bg-gray-50">
+              <div key={`veh-${veh.id}`} className="p-4 flex items-center justify-between hover:bg-gray-50">
                 <div className="flex items-center gap-3">
                   <Truck size={18} className="text-gray-600" />
                   <div>
@@ -280,8 +297,8 @@ export const TechnicianDashboard: React.FC = () => {
 
                 <div className="flex items-center gap-2">
                   <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(mappedStatus)}`}>
-                    {getStatusIcon(mappedStatus)}
-                    {getBackendStatusDisplay(veh.statut || veh.etat || 'DISPONIBLE')}
+                    <span className="flex-shrink-0">{statusIcon}</span>
+                    <span>{statusText}</span>
                   </span>
 
                   <button

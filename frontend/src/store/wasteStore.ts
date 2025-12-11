@@ -76,6 +76,7 @@ interface WasteStore {
   // Tournees Actions
   fetchTournees: () => Promise<void>;
   addTournee: (tournee: any) => Promise<void>;
+  deleteTournee: (id: string | number) => Promise<void>;
   updateTourneeStatut?: (id: string, statut: 'PLANIFIEE' | 'EN_COURS' | 'TERMINEE' | string) => Promise<void>;
   
   // Signalements Actions
@@ -732,6 +733,28 @@ export const useWasteStore = create<WasteStore>((set, get) => ({
       console.error('[WasteStore] Update Tournee Statut Error:', error);
       set({
         error: error.response?.data?.error || error.message || 'Failed to update tournee statut',
+        isLoading: false,
+      });
+      throw error;
+    }
+  },
+
+  deleteTournee: async (id) => {
+    set({ isLoading: true, error: null });
+    try {
+      console.log('[WasteStore] Deleting tournee:', id);
+      await api.delete(`/routes/${id}`);
+      console.log('[WasteStore] Tournee deleted successfully');
+      
+      // Remove from state
+      set(state => ({
+        tournees: state.tournees.filter(t => String(t.id) !== String(id)),
+        isLoading: false,
+      }));
+    } catch (error: any) {
+      console.error('[WasteStore] Delete Tournee API Error:', error);
+      set({
+        error: error.response?.data?.error || error.message || 'Failed to delete tournee',
         isLoading: false,
       });
       throw error;

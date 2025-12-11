@@ -2,8 +2,10 @@ package com.urbanwaste.service;
 
 import com.urbanwaste.model.Tournee; // Assuming the route model is Tournee
 import com.urbanwaste.model.TourneesWrapper; // Assuming you have this wrapper model
+import com.urbanwaste.model.Employee;
 import com.urbanwaste.util.XMLHandler;
 import com.urbanwaste.exception.XMLValidationException;
+import com.urbanwaste.service.EmployeeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +25,9 @@ public class RouteService {
     
     @Autowired
     private XMLHandler xmlHandler;
+    
+    @Autowired
+    private EmployeeService employeeService;
     
     private AtomicInteger idCounter = new AtomicInteger(1);
     
@@ -62,6 +67,21 @@ public class RouteService {
         return getAllRoutes().stream()
             .filter(t -> t.getId() == id)
             .findFirst();
+    }
+    
+    /**
+     * Get all routes as wrapper (for export)
+     */
+    public TourneesWrapper getAllRoutesWrapper() throws JAXBException {
+        TourneesWrapper wrapper = xmlHandler.loadFromXML(ROUTES_FILE, TourneesWrapper.class);
+        if (wrapper == null) {
+            wrapper = new TourneesWrapper();
+            wrapper.setTournees(new ArrayList<>());
+        }
+        if (wrapper.getTournees() == null) {
+            wrapper.setTournees(new ArrayList<>());
+        }
+        return wrapper;
     }
     
     /**
@@ -129,6 +149,12 @@ public class RouteService {
                 throw new IllegalArgumentException("All collection points must have a localisation");
             }
         }
+        
+        // Business Rule 1: Availability Check
+        validateEmployeeAvailability(route.getEmploye());
+        
+        // Business Rule 2: Conflict Detection
+        validateNoEmployeeConflict(route, routes);
         
         routes.add(route);
         wrapper.setTournees(routes);
@@ -203,6 +229,20 @@ public class RouteService {
         
         if (updatedRoute.getDistanceKm() == 0 && existing.getDistanceKm() != 0) {
             updatedRoute.setDistanceKm(existing.getDistanceKm());
+        }
+        
+        // Business Rule 1: Availability Check (if employee changed)
+        if (updatedRoute.getEmploye() != null && updatedRoute.getEmploye().getId() != 0) {
+            validateEmployeeAvailability(updatedRoute.getEmploye());
+        }
+        
+        // Business Rule 2: Conflict Detection (if employee or date changed)
+        if (updatedRoute.getEmploye() != null && updatedRoute.getEmploye().getId() != 0) {
+            // Create temporary list without current route for conflict check
+            List<Tournee> routesWithoutCurrent = routes.stream()
+                .filter(t -> t.getId() != id)
+                .collect(Collectors.toList());
+            validateNoEmployeeConflict(updatedRoute, routesWithoutCurrent);
         }
         
         // Set the ID and replace
@@ -320,5 +360,128 @@ public class RouteService {
             case java.util.Calendar.SUNDAY: return "Dimanche";
             default: return "Inconnu";
         }
+    }
+    
+    /**
+     * Business Rule: Validate employee availability
+     * Throws IllegalArgumentException if employee is not available
+     */
+    private void validateEmployeeAvailability(Employee employee) throws JAXBException {
+        if (employee == null || employee.getId() == 0) {
+            return; // Already validated elsewhere
+        }
+        
+        // Load employee from database to check availability
+        Optional<com.urbanwaste.model.Utilisateur> employeeOpt = employeeService.getEmployeeById(employee.getId());
+        if (employeeOpt.isEmpty()) {
+            throw new IllegalArgumentException("Employee with ID " + employee.getId() + " not found");
+        }
+        
+        // Check if employee is an Employee instance with disponible field
+        if (employeeOpt.get() instanceof Employee) {
+            Employee emp = (Employee) employeeOpt.get();
+            if (!emp.isDisponible()) {
+                throw new IllegalArgumentException(
+                    "Employee " + emp.getPrenom() + " " + emp.getNom() + " (ID: " + emp.getId() + ") is not available");
+            }
+        }
+    }
+    
+    /**
+     * Business Rule: Validate no employee conflict on same date and hour
+     * Throws IllegalArgumentException if employee is already assigned to another tour on the same date and hour
+     */
+    private void validateNoEmployeeConflict(Tournee newRoute, List<Tournee> existingRoutes) {
+        if (newRoute.getEmploye() == null || newRoute.getEmploye().getId() == 0) {
+            return; // No employee assigned, no conflict
+        }
+        
+        if (newRoute.getDatePlanifiee() == null) {
+            return; // No date assigned, no conflict
+        }
+        
+        int employeeId = newRoute.getEmploye().getId();
+        Date newRouteDate = newRoute.getDatePlanifiee();
+        String newRouteHeure = newRoute.getHeureDebut();
+        
+        // Check for conflicts: same employee, same date, same hour, status not TERMINEE
+        boolean hasConflict = existingRoutes.stream()
+            .filter(t -> t.getEmploye() != null && t.getEmploye().getId() == employeeId)
+            .filter(t -> t.getDatePlanifiee() != null)
+            .filter(t -> datesMatch(t.getDatePlanifiee(), newRouteDate))
+            .filter(t -> !"TERMINEE".equals(t.getStatut()))
+            .filter(t -> hoursOverlap(t.getHeureDebut(), t.getHeureFin(), newRouteHeure, newRoute.getHeureFin()))
+            .findAny()
+            .isPresent();
+        
+        if (hasConflict) {
+            throw new IllegalArgumentException(
+                "Employee (ID: " + employeeId + ") is already assigned to another tour on " + newRouteDate + 
+                (newRouteHeure != null ? " at " + newRouteHeure : ""));
+        }
+    }
+    
+    /**
+     * Helper method to compare dates (ignoring time)
+     */
+    private boolean datesMatch(Date date1, Date date2) {
+        if (date1 == null || date2 == null) {
+            return false;
+        }
+        
+        // Compare dates ignoring time
+        java.util.Calendar cal1 = java.util.Calendar.getInstance();
+        cal1.setTime(date1);
+        java.util.Calendar cal2 = java.util.Calendar.getInstance();
+        cal2.setTime(date2);
+        
+        return cal1.get(java.util.Calendar.YEAR) == cal2.get(java.util.Calendar.YEAR) &&
+               cal1.get(java.util.Calendar.DAY_OF_YEAR) == cal2.get(java.util.Calendar.DAY_OF_YEAR);
+    }
+    
+    /**
+     * Helper method to check if two time ranges overlap
+     * Returns true if the hours overlap (same hour slot)
+     * Format: "HH:mm" (e.g., "08:30", "14:00")
+     */
+    private boolean hoursOverlap(String heureDebut1, String heureFin1, String heureDebut2, String heureFin2) {
+        // If no hours specified, consider it as a conflict (conservative approach)
+        if (heureDebut1 == null || heureDebut1.trim().isEmpty()) {
+            return true; // Conflict if existing tour has no hour specified
+        }
+        if (heureDebut2 == null || heureDebut2.trim().isEmpty()) {
+            return true; // Conflict if new tour has no hour specified
+        }
+        
+        try {
+            // Extract hour from "HH:mm" format
+            int hour1 = extractHour(heureDebut1);
+            int hour2 = extractHour(heureDebut2);
+            
+            // Check if they are in the same hour slot
+            // Same hour = conflict (e.g., 08:30 and 08:45 are in the same hour)
+            return hour1 == hour2;
+        } catch (Exception e) {
+            // If parsing fails, consider it as a conflict (conservative approach)
+            return true;
+        }
+    }
+    
+    /**
+     * Extract hour from "HH:mm" format
+     * Returns the hour (0-23)
+     */
+    private int extractHour(String heure) {
+        if (heure == null || heure.trim().isEmpty()) {
+            return -1;
+        }
+        
+        // Handle formats like "08:30", "8:30", "14:00"
+        String[] parts = heure.trim().split(":");
+        if (parts.length >= 1) {
+            return Integer.parseInt(parts[0]);
+        }
+        
+        return -1;
     }
 }

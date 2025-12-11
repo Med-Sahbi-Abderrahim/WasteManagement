@@ -53,28 +53,88 @@ const BarChart = ({ data, labels, title, color }: { data: number[]; labels: stri
 };
 
 export const AdminDashboard: React.FC = () => {
-  const { points, tournees, vehicules, employes, signalements, fetchPoints, fetchSignalements } = useWasteStore();
+  const { 
+    points, 
+    tournees, 
+    vehicules, 
+    employes, 
+    signalements, 
+    fetchPoints, 
+    fetchSignalements,
+    fetchTournees,
+    fetchVehicules,
+    fetchEmployes
+  } = useWasteStore();
   const today = format(new Date(), 'EEEE dd MMMM yyyy', { locale: fr });
 
-  // Fetch points and signalements on mount
+  // Fetch all data on mount
   useEffect(() => {
-    console.log('[AdminDashboard] Component mounted, fetching points...');
+    console.log('[AdminDashboard] Component mounted, fetching data...');
     fetchPoints();
     fetchSignalements();
-  }, [fetchPoints, fetchSignalements]);
+    fetchTournees();
+    fetchVehicules();
+    fetchEmployes();
+  }, [fetchPoints, fetchSignalements, fetchTournees, fetchVehicules, fetchEmployes]);
+
+  // Calculate dynamic stats
+  const remplissageMoyen = points.length > 0 
+    ? Math.round(points.reduce((a, p) => a + p.niveauRemplissage, 0) / points.length) 
+    : 0;
+  
+  // Calculate recycling rate based on points with recyclable waste types
+  const recyclableTypes = ['VERRE', 'PLASTIQUE', 'PAPIER', 'METAL', 'CARTON'];
+  const recyclablePoints = points.filter(p => 
+    recyclableTypes.some(type => p.typeDechet?.nom?.toUpperCase().includes(type))
+  );
+  const tauxRecyclage = points.length > 0 
+    ? Number((recyclablePoints.length / points.length * 100).toFixed(1))
+    : 0;
+  
+  // Calculate CO2 saved based on completed tours (estimate: 0.5T per completed tour)
+  const tourneesTerminees = tournees.filter(t => t.statut === 'TERMINEE').length;
+  const co2Economise = Number((tourneesTerminees * 0.5).toFixed(1));
+  
+  // Tournées stats
+  const tourneesAuj = tournees.filter(t => {
+    const today = new Date().toISOString().split('T')[0];
+    return t.date === today && (t.statut === 'EN_COURS' || t.statut === 'PLANIFIEE');
+  }).length;
+  const tourneesTotal = tournees.length;
+  
+  // XML stats (simulated based on successful operations - could be tracked in state)
+  // For now, we'll use a simple calculation based on data operations
+  const xmlImportOk = tournees.length + points.length + employes.length; // Total entities loaded
+  const xmlImportKo = 0; // Could be tracked in state if needed
+  const xmlExportOk = tournees.length; // Assuming exports match tours
+  const xmlExportKo = 0; // Could be tracked in state if needed
+  
+  // IQT (Indice Qualité Tri) - calculate based on points with good fill levels
+  const pointsBienGeres = points.filter(p => p.niveauRemplissage < 85 && p.etatConteneur === 'BON').length;
+  const iqtMoyen = points.length > 0 
+    ? Number((pointsBienGeres / points.length * 100).toFixed(1))
+    : 0;
+  
+  // Predictions haut risque - points with high fill level or urgent reports
+  const predictionsHautRisque = points.filter(p => {
+    const hasUrgentReport = signalements.some(s => 
+      String(s.pointCollecteId) === String(p.id) && s.statut === 'URGENT'
+    );
+    return p.niveauRemplissage >= 85 || hasUrgentReport;
+  }).length;
 
   const stats = {
-    remplissageMoyen: points.length > 0 ? Math.round(points.reduce((a, p) => a + p.niveauRemplissage, 0) / points.length) : 0,
-    tauxRecyclage: 42.5,
-    tourneesAuj: tournees.filter(t => t.statut === 'EN_COURS' || t.statut === 'PLANIFIEE').length,
-    tourneesTotal: 32,
-    co2Economise: 8.5,
-    xmlImportOk: 127,
-    xmlImportKo: 3,
-    xmlExportOk: 89,
-    xmlExportKo: 1,
-    iqtMoyen: 87.4,
-    predictionsHautRisque: points.filter(p => (p as any).predictionRisque === 'HAUT').length || 8,
+    remplissageMoyen,
+    tauxRecyclage,
+    tourneesAuj,
+    tourneesTotal,
+    co2Economise,
+    xmlImportOk,
+    xmlImportKo,
+    xmlExportOk,
+    xmlExportKo,
+    iqtMoyen,
+    predictionsHautRisque,
   };
 
   return (
@@ -189,19 +249,19 @@ export const AdminDashboard: React.FC = () => {
               <tr className="hover:bg-gray-50">
                 <td className="px-3 py-2">Remplissage moyen</td>
                 <td className="text-center font-bold">{stats.remplissageMoyen}%</td>
-                <td className="text-center text-green-600">+2%</td>
+                <td className="text-center text-gray-500">-</td>
                 <td className="text-center text-orange-600">85%</td>
               </tr>
               <tr className="hover:bg-gray-50">
                 <td className="px-3 py-2">Recyclage</td>
                 <td className="text-center font-bold text-emerald-700">{stats.tauxRecyclage}%</td>
-                <td className="text-center text-green-600">+1.1%</td>
+                <td className="text-center text-gray-500">-</td>
                 <td className="text-center">50%</td>
               </tr>
               <tr className="hover:bg-gray-50">
                 <td className="px-3 py-2">CO₂ économisé</td>
                 <td className="text-center font-bold text-emerald-800">{stats.co2Economise} T</td>
-                <td className="text-center text-green-600">+0.5</td>
+                <td className="text-center text-gray-500">-</td>
                 <td className="text-center text-gray-500">N/A</td>
               </tr>
             </tbody>

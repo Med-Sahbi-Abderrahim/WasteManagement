@@ -1,10 +1,14 @@
 package com.urbanwaste.controller;
 
 import com.urbanwaste.model.Tournee; 
+import com.urbanwaste.model.TourneesWrapper;
 import com.urbanwaste.service.RouteService;
+import com.urbanwaste.util.XMLHandler;
 import com.urbanwaste.exception.XMLValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,6 +24,9 @@ public class RouteController {
     
     @Autowired
     private RouteService routeService;
+    
+    @Autowired
+    private XMLHandler xmlHandler;
 
     /**
      * GET: Retrieve all routes (Tournees)
@@ -117,6 +124,29 @@ public class RouteController {
         } catch (JAXBException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * GET: Export all routes as XML (Interoperability)
+     * Returns XML file for external system integration
+     */
+    @GetMapping("/export")
+    public ResponseEntity<?> exportRoutes() {
+        try {
+            TourneesWrapper wrapper = routeService.getAllRoutesWrapper();
+            String xmlContent = xmlHandler.marshalToString(wrapper);
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_XML);
+            headers.setContentDispositionFormData("attachment", "tournees.xml");
+            
+            return ResponseEntity.ok()
+                .headers(headers)
+                .body(xmlContent);
+        } catch (JAXBException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Failed to export routes: " + e.getMessage()));
         }
     }
 }

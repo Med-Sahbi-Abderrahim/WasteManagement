@@ -1,18 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <employes>
     <employe>
-        <id>5</id>
-        <mail>emp@ecoville.tn</mail>
-        <nom>abc</nom>
-        <prenom>abc</prenom>
-        <telephone>21541254</telephone>
-        <password>12345</password>
-        <role>EMPLOYE</role>
-        <disponible>true</disponible>
-    </employe>
-    <employe>
         <id>6</id>
-        <mail>admin@ecoville.tn</mail>
+        <mail>emp@ecoville.tn</mail>
         <nom>paso</nom>
         <prenom>maso</prenom>
         <telephone>25412541</telephone>
