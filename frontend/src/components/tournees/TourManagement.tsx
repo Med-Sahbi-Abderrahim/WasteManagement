@@ -71,8 +71,11 @@ export const TourList: React.FC = () => {
       setIsAddModalOpen(false);
       // Refresh tournees list after adding
       await fetchTournees();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to add tournee:', error);
+      // Display error message to user
+      const errorMessage = error.response?.data?.error || error.message || 'Erreur lors de la création de la tournée';
+      alert('Erreur: ' + errorMessage);
     }
   };
 
@@ -193,7 +196,17 @@ export const TourList: React.FC = () => {
             <Plus size={14} /> Ajouter
           </button>
           
-          <button onClick={exportTourneesXML} className="flex items-center gap-1 text-xs px-3 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800">
+          <button 
+            onClick={async () => {
+              try {
+                await exportTourneesXML();
+              } catch (error) {
+                console.error('Failed to export tournees:', error);
+                alert('Erreur lors de l\'export des tournées');
+              }
+            }} 
+            className="flex items-center gap-1 text-xs px-3 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800"
+          >
             <Download size={14} /> Exporter XML
           </button>
 
@@ -206,8 +219,12 @@ export const TourList: React.FC = () => {
               onChange={async (e) => {
                 const file = e.target.files?.[0];
                 if (!file) return;
-                const text = await file.text();
-                importTourneesXML(text);
+                try {
+                  await importTourneesXML(file);
+                  await fetchTournees(); // Refresh after import
+                } catch (error) {
+                  console.error('Failed to import tournees:', error);
+                }
                 e.target.value = '';
               }}
             />

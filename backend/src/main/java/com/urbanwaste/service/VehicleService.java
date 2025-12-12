@@ -223,4 +223,71 @@ public class VehicleService {
                "EN_PANNE".equals(status) || 
                "EN_REPARATION".equals(status);
     }
+    
+    /**
+     * Merge imported vehicles with existing vehicles (avoiding duplicates by ID)
+     * Returns the number of vehicles actually imported (new vehicles only)
+     */
+    public synchronized int mergeVehicles(List<Vehicule> importedVehicles) throws JAXBException, XMLValidationException {
+        VehiculesWrapper wrapper = xmlHandler.loadFromXML(VEHICLES_FILE, VehiculesWrapper.class);
+        if (wrapper == null) {
+            wrapper = new VehiculesWrapper();
+        }
+        List<Vehicule> existingVehicles = wrapper.getVehicules();
+        if (existingVehicles == null) {
+            existingVehicles = new ArrayList<>();
+        }
+        
+        // Create a set of existing IDs for quick lookup
+        Set<Integer> existingIds = existingVehicles.stream()
+            .map(Vehicule::getId)
+            .collect(Collectors.toSet());
+        
+        int importedCount = 0;
+        
+        // Merge vehicles: update existing ones or add new ones
+        for (Vehicule importedVehicle : importedVehicles) {
+            // Find existing vehicle with same ID
+            Vehicule existingVehicle = existingVehicles.stream()
+                .filter(v -> v.getId() == importedVehicle.getId())
+                .findFirst()
+                .orElse(null);
+            
+            if (existingVehicle != null) {
+                // Update existing vehicle
+                existingVehicle.setTypeVehicule(importedVehicle.getTypeVehicule() != null ? importedVehicle.getTypeVehicule() : existingVehicle.getTypeVehicule());
+                existingVehicle.setCapacite(importedVehicle.getCapacite() != 0 ? importedVehicle.getCapacite() : existingVehicle.getCapacite());
+                existingVehicle.setDisponibilite(importedVehicle.isDisponibilite());
+                existingVehicle.setImmatriculation(importedVehicle.getImmatriculation() != null ? importedVehicle.getImmatriculation() : existingVehicle.getImmatriculation());
+                existingVehicle.setStatut(importedVehicle.getStatut() != null ? importedVehicle.getStatut() : existingVehicle.getStatut());
+                existingVehicle.setEtat(importedVehicle.getEtat() != null ? importedVehicle.getEtat() : existingVehicle.getEtat());
+                existingVehicle.setConducteur(importedVehicle.getConducteur() != null ? importedVehicle.getConducteur() : existingVehicle.getConducteur());
+                
+                importedCount++; // Count updated vehicles too
+            } else {
+                // Add new vehicle
+                // Assign new ID if ID is 0 or conflicts
+                if (importedVehicle.getId() == 0 || existingIds.contains(importedVehicle.getId())) {
+                    importedVehicle.setId(idCounter.getAndIncrement());
+                }
+                
+                // Set default values if not provided
+                if (importedVehicle.getEtat() == null) {
+                    importedVehicle.setEtat("DISPONIBLE");
+                }
+                if (importedVehicle.getStatut() == null) {
+                    importedVehicle.setStatut(importedVehicle.getEtat());
+                }
+                
+                existingVehicles.add(importedVehicle);
+                existingIds.add(importedVehicle.getId());
+                importedCount++;
+            }
+        }
+        
+        wrapper.setVehicules(existingVehicles);
+        xmlHandler.saveToXML(wrapper, VEHICLES_FILE);
+        
+        return importedCount;
+    }
 }

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<pointsCollecte>
+    <pointCollecte>
+        <id>100</id>
+        <localisation>999 Test Street, Test Area</localisation>
+        <latitude>34.8000</latitude>
+        <longitude>10.8000</longitude>
+        <typeDechet>
+            <id>1</id>
+            <nom>PLASTIQUE</nom>
+        </typeDechet>
+        <niveauRemplissage>45.5</niveauRemplissage>
+        <etatConteneur>ACTIF</etatConteneur>
+        <DateDerniereCollecte>2025-12-15T10:00:00+01:00</DateDerniereCollecte>
+        <capacite>500</capacite>
+    </pointCollecte>
+    <pointCollecte>
+        <id>101</id>
+        <localisation>888 Demo Avenue, Demo Zone</localisation>
+        <latitude>34.8100</latitude>
+        <longitude>10.8100</longitude>
+        <typeDechet>
+            <id>2</id>
+            <nom>VERRE</nom>
+        </typeDechet>
+        <niveauRemplissage>70.0</niveauRemplissage>
+        <etatConteneur>ACTIF</etatConteneur>
+        <DateDerniereCollecte>2025-12-14T10:00:00+01:00</DateDerniereCollecte>
+        <capacite>300</capacite>
+    </pointCollecte>
+    <pointCollecte>
+        <id>102</id>
+        <localisation>777 Sample Road, Sample District</localisation>
+        <latitude>34.8200</latitude>
+        <longitude>10.8200</longitude>
+        <typeDechet>
+            <id>3</id>
+            <nom>PAPIER</nom>
+        </typeDechet>
+        <niveauRemplissage>55.5</niveauRemplissage>
+        <etatConteneur>ACTIF</etatConteneur>
+        <DateDerniereCollecte>2025-12-13T10:00:00+01:00</DateDerniereCollecte>
+        <capacite>400</capacite>
+    </pointCollecte>
+</pointsCollecte>
+

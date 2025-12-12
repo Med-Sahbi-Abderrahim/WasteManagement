@@ -12,6 +12,7 @@ import jakarta.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement(name = "pointCollecte")
 @XmlAccessorType(XmlAccessType.FIELD)
+@jakarta.xml.bind.annotation.XmlType(propOrder = {"id", "localisation", "niveauRemplissage", "latitude", "longitude", "capacite", "etatConteneur", "DateDerniereCollecte"})
 @JacksonXmlRootElement(localName = "pointCollecte")
 public class PointCollecte {
     @XmlElement(required = true)
@@ -21,19 +22,9 @@ public class PointCollecte {
     @JsonAlias({"address", "adresse"})
     private String localisation; // Address
 
-    @XmlElement(required = true)
+    @XmlElement
     private float niveauRemplissage;
 
-    @XmlElement(required = true)
-    private String etatConteneur; // ACTIF, MAINTENANCE, HORS_SERVICE
-
-    @XmlElement(required = true)
-    private Date DateDerniereCollecte;
-
-    @XmlElement(required = true)
-    private TypeDechet typeDechet;
-
-    // Additional fields from frontend (not in XSD)
     @XmlElement
     private double latitude;
 
@@ -44,6 +35,18 @@ public class PointCollecte {
     private int capacite;
 
     @XmlElement
+    private String etatConteneur; // ACTIF, MAINTENANCE, HORS_SERVICE
+
+    @XmlElement(name = "DateDerniereCollecte")
+    private Date DateDerniereCollecte;
+
+    // Note: typeDechet and modele are not in tournees.xsd PointCollecte definition
+    // They are only used in pointsCollecte.xsd, so we exclude them from marshalling here
+    // to avoid validation errors when used in tournees context
+    @jakarta.xml.bind.annotation.XmlTransient
+    private TypeDechet typeDechet;
+
+    @jakarta.xml.bind.annotation.XmlTransient
     private String modele;
 
     public PointCollecte() {}

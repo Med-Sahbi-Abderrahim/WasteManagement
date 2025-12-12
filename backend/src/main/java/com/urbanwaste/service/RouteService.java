@@ -6,6 +6,8 @@ import com.urbanwaste.model.Employee;
 import com.urbanwaste.util.XMLHandler;
 import com.urbanwaste.exception.XMLValidationException;
 import com.urbanwaste.service.EmployeeService;
+import com.urbanwaste.service.VehicleService;
+import com.urbanwaste.service.CollectionPointService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +30,12 @@ public class RouteService {
     
     @Autowired
     private EmployeeService employeeService;
+    
+    @Autowired
+    private VehicleService vehicleService;
+    
+    @Autowired
+    private CollectionPointService collectionPointService;
     
     private AtomicInteger idCounter = new AtomicInteger(1);
     
@@ -131,7 +139,20 @@ public class RouteService {
         if (route.getVehicle().getId() == 0) {
             throw new IllegalArgumentException("Vehicle must have a valid id");
         }
-        if (route.getVehicle().getImmatriculation() == null || route.getVehicle().getImmatriculation().trim().isEmpty()) {
+        
+        // Load complete vehicle from database to ensure all fields are present for XML marshalling
+        // This is necessary because the frontend may only send id and immatriculation
+        Optional<com.urbanwaste.model.Vehicule> vehicleOpt = vehicleService.getVehicleById(route.getVehicle().getId());
+        if (vehicleOpt.isEmpty()) {
+            throw new IllegalArgumentException("Vehicle with ID " + route.getVehicle().getId() + " not found");
+        }
+        
+        // Replace partial vehicle with complete vehicle from database
+        com.urbanwaste.model.Vehicule completeVehicle = vehicleOpt.get();
+        route.setVehicle(completeVehicle);
+        
+        // Ensure immatriculation is set (required by XSD)
+        if (completeVehicle.getImmatriculation() == null || completeVehicle.getImmatriculation().trim().isEmpty()) {
             throw new IllegalArgumentException("Vehicle must have an immatriculation");
         }
         
@@ -140,21 +161,33 @@ public class RouteService {
             throw new IllegalArgumentException("At least one collection point (pointsCollecte) is required for tour creation");
         }
         
-        // Validate that all points have required fields (id and localisation per XSD)
-        for (com.urbanwaste.model.PointCollecte point : route.getPointsCollecte()) {
-            if (point.getId() == 0) {
+        // Load complete collection points from database to ensure all fields are present for XML marshalling
+        // This is necessary because the frontend may only send id and localisation
+        List<com.urbanwaste.model.PointCollecte> completePoints = new ArrayList<>();
+        for (com.urbanwaste.model.PointCollecte partialPoint : route.getPointsCollecte()) {
+            if (partialPoint.getId() == 0) {
                 throw new IllegalArgumentException("All collection points must have a valid id");
             }
-            if (point.getLocalisation() == null || point.getLocalisation().trim().isEmpty()) {
-                throw new IllegalArgumentException("All collection points must have a localisation");
+            
+            Optional<com.urbanwaste.model.PointCollecte> pointOpt = collectionPointService.getPointById(partialPoint.getId());
+            if (pointOpt.isEmpty()) {
+                throw new IllegalArgumentException("Collection point with ID " + partialPoint.getId() + " not found");
             }
+            
+            completePoints.add(pointOpt.get());
         }
+        
+        // Replace partial points with complete points from database
+        route.setPointsCollecte(completePoints);
         
         // Business Rule 1: Availability Check
         validateEmployeeAvailability(route.getEmploye());
         
         // Business Rule 2: Conflict Detection
         validateNoEmployeeConflict(route, routes);
+        
+        // Business Rule 3: Capacity Validation
+        validateVehicleCapacity(route);
         
         routes.add(route);
         wrapper.setTournees(routes);
@@ -244,6 +277,9 @@ public class RouteService {
                 .collect(Collectors.toList());
             validateNoEmployeeConflict(updatedRoute, routesWithoutCurrent);
         }
+        
+        // Business Rule 3: Capacity Validation
+        validateVehicleCapacity(updatedRoute);
         
         // Set the ID and replace
         updatedRoute.setId(id);
@@ -483,5 +519,131 @@ public class RouteService {
         }
         
         return -1;
+    }
+    
+    /**
+     * Business Rule: Validate vehicle capacity against collection points
+     * Throws IllegalArgumentException if vehicle capacity is exceeded
+     */
+    private void validateVehicleCapacity(Tournee route) throws JAXBException {
+        if (route.getVehicle() == null || route.getVehicle().getId() == 0) {
+            return; // Already validated elsewhere
+        }
+        
+        if (route.getPointsCollecte() == null || route.getPointsCollecte().isEmpty()) {
+            return; // No points to validate
+        }
+        
+        // Load vehicle from database to get actual capacity
+        Optional<com.urbanwaste.model.Vehicule> vehicleOpt = vehicleService.getVehicleById(route.getVehicle().getId());
+        if (vehicleOpt.isEmpty()) {
+            throw new IllegalArgumentException("Vehicle with ID " + route.getVehicle().getId() + " not found");
+        }
+        
+        com.urbanwaste.model.Vehicule vehicle = vehicleOpt.get();
+        float vehicleCapacity = vehicle.getCapacite();
+        
+        // Calculate total volume needed from all collection points
+        float totalVolumeNeeded = 0.0f;
+        
+        for (com.urbanwaste.model.PointCollecte point : route.getPointsCollecte()) {
+            // If point has capacite field, use it
+            // Otherwise, estimate based on niveauRemplissage if available
+            float pointVolume = 0.0f;
+            
+            if (point.getCapacite() > 0) {
+                // Use actual capacity
+                pointVolume = point.getCapacite();
+            } else {
+                // Estimate: assume standard capacity of 1000L and calculate based on fill level
+                // This is a conservative estimate
+                float estimatedCapacity = 1000.0f; // Default 1000L per bin
+                float fillLevel = point.getNiveauRemplissage();
+                pointVolume = estimatedCapacity * (fillLevel / 100.0f);
+            }
+            
+            totalVolumeNeeded += pointVolume;
+        }
+        
+        // Check if vehicle capacity is sufficient
+        if (totalVolumeNeeded > vehicleCapacity) {
+            throw new IllegalArgumentException(
+                String.format("Vehicle capacity exceeded: Vehicle capacity (%.1f) is insufficient for tour (%.1f needed)", 
+                    vehicleCapacity, totalVolumeNeeded));
+        }
+    }
+    
+    /**
+     * Merge imported routes with existing routes (avoiding duplicates by ID)
+     * Returns the number of routes actually imported/updated
+     * Also returns validation errors in a list
+     */
+    public synchronized int mergeRoutes(List<Tournee> importedRoutes) throws JAXBException, XMLValidationException {
+        TourneesWrapper wrapper = xmlHandler.loadFromXML(ROUTES_FILE, TourneesWrapper.class);
+        if (wrapper == null) {
+            wrapper = new TourneesWrapper();
+        }
+        List<Tournee> existingRoutes = wrapper.getTournees();
+        if (existingRoutes == null) {
+            existingRoutes = new ArrayList<>();
+        }
+        
+        // Create a set of existing IDs for quick lookup
+        Set<Integer> existingIds = existingRoutes.stream()
+            .map(Tournee::getId)
+            .collect(Collectors.toSet());
+        
+        int importedCount = 0;
+        
+        // Merge routes: update existing ones or add new ones
+        for (Tournee importedRoute : importedRoutes) {
+            // Find existing route with same ID
+            Tournee existingRoute = existingRoutes.stream()
+                .filter(r -> r.getId() == importedRoute.getId())
+                .findFirst()
+                .orElse(null);
+            
+            if (existingRoute != null) {
+                // Update existing route - skip strict validation for imports
+                try {
+                    // Update fields without strict validation (imports are trusted data)
+                    existingRoute.setDatePlanifiee(importedRoute.getDatePlanifiee() != null ? importedRoute.getDatePlanifiee() : existingRoute.getDatePlanifiee());
+                    existingRoute.setStatut(importedRoute.getStatut() != null ? importedRoute.getStatut() : existingRoute.getStatut());
+                    existingRoute.setEmploye(importedRoute.getEmploye() != null ? importedRoute.getEmploye() : existingRoute.getEmploye());
+                    existingRoute.setVehicle(importedRoute.getVehicle() != null ? importedRoute.getVehicle() : existingRoute.getVehicle());
+                    existingRoute.setPointsCollecte(importedRoute.getPointsCollecte() != null && !importedRoute.getPointsCollecte().isEmpty() ? importedRoute.getPointsCollecte() : existingRoute.getPointsCollecte());
+                    existingRoute.setHeureDebut(importedRoute.getHeureDebut() != null ? importedRoute.getHeureDebut() : existingRoute.getHeureDebut());
+                    existingRoute.setHeureFin(importedRoute.getHeureFin() != null ? importedRoute.getHeureFin() : existingRoute.getHeureFin());
+                    existingRoute.setDistanceKm(importedRoute.getDistanceKm() != 0 ? importedRoute.getDistanceKm() : existingRoute.getDistanceKm());
+                    
+                    importedCount++; // Count updated routes
+                } catch (Exception e) {
+                    // Skip routes that fail for any reason
+                    System.err.println("Skipping route update due to error: " + e.getMessage());
+                }
+            } else {
+                // Add new route
+                // Assign new ID if ID is 0 or conflicts
+                if (importedRoute.getId() == 0 || existingIds.contains(importedRoute.getId())) {
+                    importedRoute.setId(idCounter.getAndIncrement());
+                }
+                
+                // For imports, skip strict validation - just add the route
+                // Validation will happen when the route is actually used
+                try {
+                    existingRoutes.add(importedRoute);
+                    existingIds.add(importedRoute.getId());
+                    importedCount++;
+                } catch (Exception e) {
+                    // Skip routes that fail for any reason
+                    System.err.println("Skipping route due to error: " + e.getMessage());
+                }
+            }
+        }
+        
+        wrapper.setTournees(existingRoutes);
+        xmlHandler.saveToXML(wrapper, ROUTES_FILE);
+        
+        return importedCount;
     }
 }

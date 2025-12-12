@@ -6,10 +6,10 @@ import { CollectPointCard } from './CollectPointCard';
 import { AddPointModal } from './AddPointModal';
 import { Plus, Upload, Download, Search } from 'lucide-react';
 import { PointCollecte } from '../../types/waste';
-import { generatePointsXML, parsePointsXML } from '../../utils/xml';
+import { generatePointsXML } from '../../utils/xml';
 
 export const CollectPointList: React.FC = () => {
-  const { points, isLoading, error, fetchPoints, addPoint, updatePoint, removePoint } = useWasteStore();
+  const { points, isLoading, error, fetchPoints, addPoint, updatePoint, removePoint, importPointsXML } = useWasteStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPoint, setEditingPoint] = useState<PointCollecte | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
@@ -101,23 +101,16 @@ export const CollectPointList: React.FC = () => {
               type="file"
               accept=".xml"
               className="hidden"
-              onChange={(e) => {
+              onChange={async (e) => {
                 const file = e.target.files?.[0];
                 if (!file) return;
-
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                  try {
-                    const imported = parsePointsXML(ev.target?.result as string);
-                    // Imported points should be added via API, not directly to store
-                    // For now, just show a message
-                    alert(`${imported.length} points de collecte parsés. L'import via API sera implémenté.`);
-                  } catch (err) {
-                    alert("Erreur lors de l'import du fichier XML");
-                  }
-                };
-                reader.onerror = () => alert('Erreur de lecture du fichier');
-                reader.readAsText(file);
+                try {
+                  await importPointsXML(file);
+                  await fetchPoints(); // Refresh after import
+                } catch (error) {
+                  console.error('Failed to import points:', error);
+                }
+                e.target.value = '';
               }}
             />
             <div className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium shadow-sm">

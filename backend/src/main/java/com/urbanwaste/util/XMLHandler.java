@@ -17,6 +17,8 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import javax.xml.transform.stream.StreamSource;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 
 import java.io.*;
 import java.util.HashSet;
@@ -32,6 +34,20 @@ public class XMLHandler {
 
     private final ConcurrentHashMap<Class<?>, JAXBContext> contextCache = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Schema> schemaCache = new ConcurrentHashMap<>();
+    
+    /**
+     * Clear schema cache to force reload (useful when XSD files are updated)
+     */
+    public void clearSchemaCache() {
+        schemaCache.clear();
+    }
+    
+    /**
+     * Clear schema cache for a specific XSD file
+     */
+    public void clearSchemaCache(String xsdFileName) {
+        schemaCache.remove(xsdFileName);
+    }
     
     public XMLHandler(ResourceLoader resourceLoader) {
         this.resourceLoader = resourceLoader;
@@ -52,6 +68,8 @@ public class XMLHandler {
             return "signalements.xsd";
         } else if (fileName.contains("notifications")) {
             return "notifications.xsd";
+        } else if (fileName.contains("points") || fileName.contains("collection")) {
+            return "pointsCollecte.xsd";
         }
         
         // Fallback: try to infer from class name
@@ -62,6 +80,8 @@ public class XMLHandler {
             return "vehicules.xsd";
         } else if (className.contains("tournee") || className.contains("route")) {
             return "tournees.xsd";
+        } else if (className.contains("point") || className.contains("collecte")) {
+            return "pointsCollecte.xsd";
         }
         
         return null;
@@ -201,6 +221,12 @@ public class XMLHandler {
             }
             
             return (T) unmarshaller.unmarshal(is);
+        } catch (org.xml.sax.SAXParseException e) {
+            // Wrap SAXParseException with more details
+            throw new SAXException(
+                String.format("XML validation failed at line %d, column %d: %s", 
+                    e.getLineNumber(), e.getColumnNumber(), 
+                    e.getMessage() != null ? e.getMessage() : e.getLocalizedMessage()), e);
         } catch (IOException e) {
             throw new JAXBException("Error reading input stream", e);
         }
@@ -261,6 +287,8 @@ public class XMLHandler {
         classes.add(Notification.class);
         classes.add(NotificationsWrapper.class);
         classes.add(TourneesWrapper.class);
+        classes.add(PointsCollecteWrapper.class);
+        classes.add(VehiculesWrapper.class);
         
         return classes.toArray(new Class<?>[0]);
     }
@@ -271,13 +299,17 @@ public class XMLHandler {
                 // Use javax.xml.validation.SchemaFactory (Standard Java)
                 SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
                 
+                // First try external file (for development/testing)
                 File file = new File(STORAGE_DIR, xsdFileName);
                 if (file.exists()) {
+                    System.out.println("[XMLHandler] Loading XSD from file: " + file.getAbsolutePath());
                     return factory.newSchema(file);
                 }
                 
+                // Then try classpath resource
                 Resource resource = resourceLoader.getResource("classpath:" + CLASSPATH_DIR + xsdFileName);
                 if (resource.exists()) {
+                    System.out.println("[XMLHandler] Loading XSD from classpath: " + CLASSPATH_DIR + xsdFileName);
                     try (InputStream is = resource.getInputStream()) {
                         return factory.newSchema(new StreamSource(is));
                     }
@@ -287,7 +319,6 @@ public class XMLHandler {
                 throw new RuntimeException("Failed to load schema: " + xsdFileName, e);
             }
         });
-        
     }
     
     /**
@@ -303,5 +334,108 @@ public class XMLHandler {
         StringWriter writer = new StringWriter();
         marshaller.marshal(object, writer);
         return writer.toString();
+    }
+    
+    /**
+     * Unmarshal object from InputStream with XSD validation
+     * Used for import endpoints and interoperability
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T unmarshalFromStream(InputStream inputStream, Class<T> clazz, String xsdFileName) throws JAXBException, SAXException {
+        // Clear schema cache to ensure we're using the latest XSD
+        if (xsdFileName != null && !xsdFileName.isEmpty()) {
+            clearSchemaCache(xsdFileName);
+        }
+        
+        // Buffer the input stream to allow multiple reads if needed
+        byte[] buffer;
+        try {
+            buffer = inputStream.readAllBytes();
+            System.out.println("[XMLHandler] Read " + buffer.length + " bytes from input stream");
+        } catch (IOException e) {
+            throw new JAXBException("Error reading input stream", e);
+        }
+        
+        // Log first 500 characters for debugging
+        String preview = new String(buffer, 0, Math.min(500, buffer.length));
+        System.out.println("[XMLHandler] XML preview (first 500 chars): " + preview.replace("\n", "\\n").replace("\r", "\\r"));
+        
+        JAXBContext context = getOrCreateContext(clazz);
+        Unmarshaller unmarshaller = context.createUnmarshaller();
+        
+        // Set schema for validation if provided
+        if (xsdFileName != null && !xsdFileName.isEmpty()) {
+            Schema schema = getOrLoadSchema(xsdFileName);
+            unmarshaller.setSchema(schema);
+            System.out.println("[XMLHandler] Using XSD schema: " + xsdFileName);
+            System.out.println("[XMLHandler] Schema cache cleared, using fresh schema");
+        }
+        
+        ByteArrayInputStream bais = new ByteArrayInputStream(buffer);
+        try {
+            return (T) unmarshaller.unmarshal(bais);
+        } catch (JAXBException e) {
+            // Check if the cause is a SAXParseException (validation error)
+            Throwable cause = e.getCause();
+            if (cause instanceof org.xml.sax.SAXParseException) {
+                org.xml.sax.SAXParseException saxEx = (org.xml.sax.SAXParseException) cause;
+                String detailedMsg = String.format("XML validation failed at line %d, column %d: %s", 
+                    saxEx.getLineNumber(), saxEx.getColumnNumber(), 
+                    saxEx.getMessage() != null ? saxEx.getMessage() : saxEx.getLocalizedMessage());
+                
+                // Log the error location for debugging
+                System.err.println("[XMLHandler] Validation error at line " + saxEx.getLineNumber() + 
+                                 ", column " + saxEx.getColumnNumber() + ": " + saxEx.getMessage());
+                
+                // Extract context around the error
+                if (saxEx.getLineNumber() > 0) {
+                    String[] lines = new String(buffer).split("\n");
+                    if (saxEx.getLineNumber() <= lines.length) {
+                        String errorLine = lines[saxEx.getLineNumber() - 1];
+                        System.err.println("[XMLHandler] Error line content: " + errorLine);
+                    }
+                }
+                
+                // Add context about what was expected
+                if (saxEx.getMessage() != null && saxEx.getMessage().contains("capacite") && saxEx.getMessage().contains("statut")) {
+                    detailedMsg += ". Expected order in <vehicle>: id, capacite, disponibilite, immatriculation, typeVehicule, statut, etat, conducteur";
+                }
+                
+                try {
+                    bais.close();
+                } catch (IOException ignored) {
+                    // Ignore close errors
+                }
+                throw new SAXException(detailedMsg, saxEx);
+            }
+            // If not a validation error, rethrow as JAXBException
+            System.err.println("[XMLHandler] JAXBException (not validation): " + e.getMessage());
+            e.printStackTrace();
+            try {
+                bais.close();
+            } catch (IOException ignored) {
+                // Ignore close errors
+            }
+            throw e;
+        } finally {
+            try {
+                bais.close();
+            } catch (IOException ignored) {
+                // Ignore close errors
+            }
+        }
+    }
+    
+    /**
+     * Unmarshal object from InputStream with automatic XSD detection
+     */
+    public <T> T unmarshalFromStream(InputStream inputStream, Class<T> clazz) throws JAXBException {
+        try {
+            // Auto-determine XSD based on class name
+            String xsdFileName = determineXsdFileName("", clazz);
+            return unmarshalFromStream(inputStream, clazz, xsdFileName);
+        } catch (SAXException e) {
+            throw new JAXBException("Failed to unmarshal from stream: " + e.getMessage(), e);
+        }
     }
 }

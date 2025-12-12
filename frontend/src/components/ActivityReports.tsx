@@ -5,7 +5,17 @@ import { useWasteStore } from '../store/wasteStore';
 import { FileText, User, Calendar, Download, Upload } from 'lucide-react';
 
 export const ActivityReports: React.FC = () => {
-  const { employes, tournees, exportActivityReportXML } = useWasteStore();
+  const { employes, tournees, exportActivityReportXML, fetchTournees, fetchEmployes } = useWasteStore();
+  
+  // Fetch data on mount
+  React.useEffect(() => {
+    if (employes.length === 0) {
+      fetchEmployes();
+    }
+    if (tournees.length === 0) {
+      fetchTournees();
+    }
+  }, [employes.length, tournees.length, fetchEmployes, fetchTournees]);
 
   // Fonction pour importer (temporaire – tu pourras la connecter plus tard)
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -27,7 +37,14 @@ export const ActivityReports: React.FC = () => {
         <div className="flex gap-3">
           {/* EXPORT RAPPORTS */}
           <button
-            onClick={exportActivityReportXML}
+            onClick={async () => {
+              try {
+                await exportActivityReportXML();
+              } catch (error) {
+                console.error('Failed to export activity report:', error);
+                alert('Erreur lors de l\'export du rapport d\'activité');
+              }
+            }}
             className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium shadow-sm"
           >
             <Download size={18} />
@@ -58,7 +75,9 @@ export const ActivityReports: React.FC = () => {
           </div>
         ) : (
           employes.map(employe => {
-            const employeeTours = tournees.filter(t => t.employeIds.includes(employe.id));
+            const employeeTours = tournees.filter(t => 
+              t.employeIds && t.employeIds.includes(String(employe.id))
+            );
             const completedTours = employeeTours.filter(t => t.statut === 'TERMINEE');
 
             return (
@@ -66,10 +85,10 @@ export const ActivityReports: React.FC = () => {
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
-                      {employe.prenom.charAt(0)}{employe.nom.charAt(0)}
+                      {employe.prenom?.charAt(0) || ''}{employe.nom?.charAt(0) || ''}
                     </div>
                     <div>
-                      <h3 className="font-bold text-gray-900 text-lg">{employe.prenom} {employe.nom}</h3>
+                      <h3 className="font-bold text-gray-900 text-lg">{employe.prenom || ''} {employe.nom || ''}</h3>
                       <p className="text-gray-500 flex items-center gap-1 text-sm">
                         <User size={14} />
                         {employe.role}

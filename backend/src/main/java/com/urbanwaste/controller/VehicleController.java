@@ -1,12 +1,16 @@
 package com.urbanwaste.controller;
 
 import com.urbanwaste.model.Vehicule; 
+import com.urbanwaste.model.VehiculesWrapper;
 import com.urbanwaste.service.VehicleService;
+import com.urbanwaste.util.XMLHandler;
 import com.urbanwaste.exception.XMLValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.xml.sax.SAXException;
 
 import jakarta.xml.bind.JAXBException; 
 import java.util.List;
@@ -20,6 +24,9 @@ public class VehicleController {
     
     @Autowired
     private VehicleService vehicleService;
+    
+    @Autowired
+    private XMLHandler xmlHandler;
 
     /**
      * GET: Retrieve all vehicles
@@ -120,6 +127,66 @@ public class VehicleController {
         } catch (JAXBException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * POST: Import vehicles from XML file (Interoperability)
+     * Accepts MultipartFile XML, validates against XSD, and merges with existing data
+     */
+    @PostMapping("/import")
+    public ResponseEntity<?> importVehicles(@RequestParam("file") MultipartFile file) {
+        if (file.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", "File is empty"));
+        }
+        
+        try {
+            // Unmarshal XML from InputStream with XSD validation
+            VehiculesWrapper importedWrapper = xmlHandler.unmarshalFromStream(
+                file.getInputStream(), 
+                VehiculesWrapper.class, 
+                "vehicules.xsd"
+            );
+            
+            if (importedWrapper == null || importedWrapper.getVehicules() == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "Invalid XML structure"));
+            }
+            
+            // Merge with existing data (avoiding duplicates by ID)
+            int importedCount = vehicleService.mergeVehicles(importedWrapper.getVehicules());
+            
+            return ResponseEntity.ok(Map.of(
+                "message", "Vehicles imported successfully",
+                "imported", importedCount,
+                "total", importedWrapper.getVehicules().size()
+            ));
+        } catch (SAXException e) {
+            String errorMsg = e.getMessage();
+            if (errorMsg == null || errorMsg.isEmpty()) {
+                errorMsg = e.getClass().getSimpleName() + ": " + (e.getLocalizedMessage() != null ? e.getLocalizedMessage() : "XML validation failed");
+            }
+            // Try to extract more details from the exception
+            if (e.getLocalizedMessage() != null && !e.getLocalizedMessage().isEmpty()) {
+                errorMsg += " (" + e.getLocalizedMessage() + ")";
+            }
+            // Add helpful message for common validation errors
+            if (errorMsg.contains("telephone") && errorMsg.contains("conducteur")) {
+                errorMsg += ". Note: The 'telephone' field is not allowed in 'conducteur' for vehicles. Only 'id', 'nom', and 'prenom' are allowed.";
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", "XML validation failed: " + errorMsg));
+        } catch (JAXBException e) {
+            String errorMsg = e.getMessage();
+            if (errorMsg == null || errorMsg.isEmpty()) {
+                errorMsg = e.getClass().getSimpleName() + ": " + (e.getCause() != null ? e.getCause().getMessage() : "XML parsing failed");
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", "XML parsing failed: " + errorMsg));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Failed to import vehicles: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName())));
         }
     }
 }

@@ -1,11 +1,15 @@
 package com.urbanwaste.controller;
 
 import com.urbanwaste.model.PointCollecte;
+import com.urbanwaste.model.PointsCollecteWrapper;
 import com.urbanwaste.service.CollectionPointService;
+import com.urbanwaste.util.XMLHandler;
 import com.urbanwaste.exception.XMLValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.xml.sax.SAXException;
 
 import jakarta.xml.bind.JAXBException;
 import java.util.*;
@@ -17,6 +21,9 @@ public class CollectionPointController {
     
     @Autowired
     private CollectionPointService pointService;
+    
+    @Autowired
+    private XMLHandler xmlHandler;
     
     @GetMapping
     public ResponseEntity<?> getAllPoints() {
@@ -134,6 +141,58 @@ public class CollectionPointController {
         } catch (JAXBException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Error processing XML"));
+        }
+    }
+    
+    /**
+     * POST: Import collection points from XML file (Interoperability)
+     * Accepts MultipartFile XML, validates against XSD, and merges with existing data
+     */
+    @PostMapping("/import")
+    public ResponseEntity<?> importPoints(@RequestParam("file") MultipartFile file) {
+        if (file.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", "File is empty"));
+        }
+        
+        try {
+            // Unmarshal XML from InputStream with XSD validation
+            PointsCollecteWrapper importedWrapper = xmlHandler.unmarshalFromStream(
+                file.getInputStream(), 
+                PointsCollecteWrapper.class, 
+                "pointsCollecte.xsd"
+            );
+            
+            if (importedWrapper == null || importedWrapper.getPoints() == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "Invalid XML structure"));
+            }
+            
+            // Merge with existing data (avoiding duplicates by ID)
+            int importedCount = pointService.mergePoints(importedWrapper.getPoints());
+            
+            return ResponseEntity.ok(Map.of(
+                "message", "Collection points imported successfully",
+                "imported", importedCount,
+                "total", importedWrapper.getPoints().size()
+            ));
+        } catch (SAXException e) {
+            String errorMsg = e.getMessage();
+            if (errorMsg == null || errorMsg.isEmpty()) {
+                errorMsg = e.getClass().getSimpleName() + ": " + (e.getLocalizedMessage() != null ? e.getLocalizedMessage() : "XML validation failed");
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", "XML validation failed: " + errorMsg));
+        } catch (JAXBException e) {
+            String errorMsg = e.getMessage();
+            if (errorMsg == null || errorMsg.isEmpty()) {
+                errorMsg = e.getClass().getSimpleName() + ": " + (e.getCause() != null ? e.getCause().getMessage() : "XML parsing failed");
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", "XML parsing failed: " + errorMsg));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Failed to import points: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName())));
         }
     }
 }

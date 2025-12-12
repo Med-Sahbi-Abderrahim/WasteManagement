@@ -41,6 +41,7 @@ interface WasteStore {
   addPoint: (point: Omit<PointCollecte, 'id'>) => Promise<void>;
   updatePoint: (id: number, point: Partial<PointCollecte>) => Promise<void>;
   removePoint: (id: number) => Promise<void>;
+  importPointsXML: (file: File) => Promise<void>;
   
   // Employees Actions
   fetchEmployes: () => Promise<void>;
@@ -72,18 +73,24 @@ interface WasteStore {
   updateVehicule: (id: string | number, updates: Partial<Vehicule>) => Promise<void>;
   removeVehicule: (id: string | number) => Promise<void>;
   exportVehiculesXML: () => void;
+  importVehiculesXML: (file: File) => Promise<void>;
   
   // Tournees Actions
   fetchTournees: () => Promise<void>;
   addTournee: (tournee: any) => Promise<void>;
   deleteTournee: (id: string | number) => Promise<void>;
   updateTourneeStatut?: (id: string, statut: 'PLANIFIEE' | 'EN_COURS' | 'TERMINEE' | string) => Promise<void>;
+  exportTourneesXML: () => Promise<void>;
+  importTourneesXML: (file: File) => Promise<void>;
   
   // Signalements Actions
   fetchSignalements: () => Promise<void>;
   addSignalement: (signalement: any) => Promise<void>;
   exportSignalementsXML: () => void;
   importSignalementsXML: (xmlString: string) => void;
+  
+  // Activity Reports
+  exportActivityReportXML: () => Promise<void>;
 
 }
 
@@ -102,6 +109,44 @@ export const useWasteStore = create<WasteStore>((set, get) => ({
   addNotification: undefined,
   
   // Points Actions
+  importPointsXML: async (file: File) => {
+    set({ isLoading: true, error: null });
+    try {
+      console.log('[WasteStore] Importing points XML to backend...');
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await api.post('/points/import', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      console.log('[WasteStore] Points imported successfully:', response.data);
+      
+      // Refresh points after import
+      await get().fetchPoints();
+      
+      set({ isLoading: false });
+      
+      // Show success message
+      if (response.data.imported !== undefined) {
+        alert(`Import réussi: ${response.data.imported} point(s) de collecte importé(s) sur ${response.data.total}`);
+      } else {
+        alert('Points de collecte importés avec succès');
+      }
+    } catch (error: any) {
+      console.error('[WasteStore] Import Points XML Error:', error);
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to import points XML';
+      set({ 
+        error: errorMessage,
+        isLoading: false 
+      });
+      alert(`Erreur lors de l'import: ${errorMessage}`);
+      throw error;
+    }
+  },
+
   fetchPoints: async () => {
     set({ isLoading: true, error: null });
     try {
@@ -541,6 +586,44 @@ export const useWasteStore = create<WasteStore>((set, get) => ({
     a.click();
     URL.revokeObjectURL(url);
   },
+
+  importVehiculesXML: async (file: File) => {
+    set({ isLoading: true, error: null });
+    try {
+      console.log('[WasteStore] Importing vehicles XML to backend...');
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await api.post('/vehicles/import', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      console.log('[WasteStore] Vehicles imported successfully:', response.data);
+      
+      // Refresh vehicles after import
+      await get().fetchVehicules();
+      
+      set({ isLoading: false });
+      
+      // Show success message
+      if (response.data.imported !== undefined) {
+        alert(`Import réussi: ${response.data.imported} véhicule(s) importé(s) sur ${response.data.total}`);
+      } else {
+        alert('Véhicules importés avec succès');
+      }
+    } catch (error: any) {
+      console.error('[WasteStore] Import Vehicles XML Error:', error);
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to import vehicles XML';
+      set({ 
+        error: errorMessage,
+        isLoading: false 
+      });
+      alert(`Erreur lors de l'import: ${errorMessage}`);
+      throw error;
+    }
+  },
   
   // Tournees Actions
   fetchTournees: async () => {
@@ -760,6 +843,67 @@ export const useWasteStore = create<WasteStore>((set, get) => ({
       throw error;
     }
   },
+
+  exportTourneesXML: async () => {
+    try {
+      console.log('[WasteStore] Exporting tournees XML from backend...');
+      const response = await api.get('/routes/export', {
+        responseType: 'blob',
+      });
+      
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/xml' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'rapport_tournees.xml');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      console.log('[WasteStore] Tournees XML exported successfully');
+    } catch (error: any) {
+      console.error('[WasteStore] Export Tournees XML Error:', error);
+      set({ error: error.response?.data?.error || error.message || 'Failed to export tournees XML' });
+      throw error;
+    }
+  },
+
+  importTourneesXML: async (file: File) => {
+    set({ isLoading: true, error: null });
+    try {
+      console.log('[WasteStore] Importing tournees XML to backend...');
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await api.post('/routes/import', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      console.log('[WasteStore] Tournees imported successfully:', response.data);
+      
+      // Refresh tournees after import
+      await get().fetchTournees();
+      
+      set({ isLoading: false });
+      
+      // Show success message
+      if (response.data.imported !== undefined) {
+        alert(`Import réussi: ${response.data.imported} tournée(s) importée(s) sur ${response.data.total}`);
+      }
+    } catch (error: any) {
+      console.error('[WasteStore] Import Tournees XML Error:', error);
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to import tournees XML';
+      set({ 
+        error: errorMessage,
+        isLoading: false 
+      });
+      alert(`Erreur lors de l'import: ${errorMessage}`);
+      throw error;
+    }
+  },
   
   // Signalements Actions
   fetchSignalements: async () => {
@@ -826,6 +970,32 @@ export const useWasteStore = create<WasteStore>((set, get) => ({
     } catch (error) {
       console.error('Failed to parse signalements XML:', error);
       set({ error: 'Failed to import signalements XML' });
+    }
+  },
+
+  exportActivityReportXML: async () => {
+    try {
+      console.log('[WasteStore] Exporting activity report XML from backend...');
+      // Export routes as activity report (same endpoint, different filename)
+      const response = await api.get('/routes/export', {
+        responseType: 'blob',
+      });
+      
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/xml' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'rapport_activite.xml');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      console.log('[WasteStore] Activity report XML exported successfully');
+    } catch (error: any) {
+      console.error('[WasteStore] Export Activity Report XML Error:', error);
+      set({ error: error.response?.data?.error || error.message || 'Failed to export activity report XML' });
+      throw error;
     }
   },
   

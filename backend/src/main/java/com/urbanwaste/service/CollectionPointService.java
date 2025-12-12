@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional; // <-- CHANGED from javax.annotation
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger; // <-- CHANGED from javax.xml.bind
 import java.util.stream.Collectors;
 
@@ -258,5 +259,57 @@ public class CollectionPointService {
         stats.put("remplissageMoyen", Math.round(avgFill * 100) / 100.0);
         
         return stats;
+    }
+    
+    /**
+     * Merge imported points with existing points (avoiding duplicates by ID)
+     * Returns the number of points actually imported (new points only)
+     */
+    public synchronized int mergePoints(List<PointCollecte> importedPoints) throws JAXBException, XMLValidationException {
+        PointsCollecteWrapper wrapper = xmlHandler.loadFromXML(POINTS_FILE, PointsCollecteWrapper.class);
+        if (wrapper == null) {
+            wrapper = new PointsCollecteWrapper();
+        }
+        List<PointCollecte> existingPoints = wrapper.getPoints();
+        if (existingPoints == null) {
+            existingPoints = new ArrayList<>();
+        }
+        
+        // Create a set of existing IDs for quick lookup
+        Set<Integer> existingIds = existingPoints.stream()
+            .map(PointCollecte::getId)
+            .collect(Collectors.toSet());
+        
+        int importedCount = 0;
+        
+        // Add only points that don't already exist (by ID)
+        for (PointCollecte importedPoint : importedPoints) {
+            if (!existingIds.contains(importedPoint.getId())) {
+                // Assign new ID if ID is 0 or conflicts
+                if (importedPoint.getId() == 0 || existingIds.contains(importedPoint.getId())) {
+                    importedPoint.setId(idCounter.getAndIncrement());
+                }
+                
+                // Set default values if not provided
+                if (importedPoint.getEtatConteneur() == null) {
+                    importedPoint.setEtatConteneur("ACTIF");
+                }
+                if (importedPoint.getDateDerniereCollecte() == null) {
+                    importedPoint.setDateDerniereCollecte(new Date());
+                }
+                if (importedPoint.getTypeDechet() == null) {
+                    importedPoint.setTypeDechet(new TypeDechet(1, "MIXTE"));
+                }
+                
+                existingPoints.add(importedPoint);
+                existingIds.add(importedPoint.getId());
+                importedCount++;
+            }
+        }
+        
+        wrapper.setPoints(existingPoints);
+        xmlHandler.saveToXML(wrapper, POINTS_FILE);
+        
+        return importedCount;
     }
 }

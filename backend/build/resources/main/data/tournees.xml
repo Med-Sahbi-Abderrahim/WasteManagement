@@ -1,272 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <tournees>
     <tournee>
-        <id>5</id>
-        <datePlanifiee>2025-12-09T01:00:00+01:00</datePlanifiee>
-        <statut>PLANIFIEE</statut>
-        <employe>
-            <id>0</id>
-            <nom></nom>
-            <prenom></prenom>
-            <telephone>0</telephone>
-            <role>EMPLOYE</role>
-            <disponible>false</disponible>
-        </employe>
-        <vehicle>
-            <id>1</id>
-            <capacite>0.0</capacite>
-            <disponibilite>false</disponibilite>
-            <immatriculation>TN-123-AB</immatriculation>
-        </vehicle>
-        <heureDebut>06:15</heureDebut>
-        <heureFin></heureFin>
-        <distanceKm>37.7</distanceKm>
-    </tournee>
-    <tournee>
-        <id>6</id>
-        <datePlanifiee>2025-12-09T01:00:00+01:00</datePlanifiee>
-        <statut>PLANIFIEE</statut>
-        <employe>
-            <id>0</id>
-            <nom></nom>
-            <prenom></prenom>
-            <telephone>0</telephone>
-            <role>EMPLOYE</role>
-            <disponible>false</disponible>
-        </employe>
-        <vehicle>
-            <id>1</id>
-            <capacite>0.0</capacite>
-            <disponibilite>false</disponibilite>
-            <immatriculation>TN-123-AB</immatriculation>
-        </vehicle>
-        <pointsCollecte>
-            <id>3</id>
-            <localisation>789 High Street, Industrial Zone</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <pointsCollecte>
-            <id>4</id>
-            <localisation>321 Park Boulevard, Residential Area</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <pointsCollecte>
-            <id>5</id>
-            <localisation>555 Market Square, City Center</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <pointsCollecte>
-            <id>6</id>
-            <localisation>999 Riverside Drive, Waterfront</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <pointsCollecte>
-            <id>7</id>
-            <localisation>777 Business District, Financial Center</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <pointsCollecte>
-            <id>8</id>
-            <localisation>111 University Campus, Education Zone</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <pointsCollecte>
-            <id>9</id>
-            <localisation>222 Shopping Mall, Commercial Area</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <heureDebut>06:15</heureDebut>
-        <heureFin></heureFin>
-        <distanceKm>37.7</distanceKm>
-    </tournee>
-    <tournee>
-        <id>7</id>
-        <datePlanifiee>2025-12-09T01:00:00+01:00</datePlanifiee>
-        <statut>PLANIFIEE</statut>
-        <employe>
-            <id>0</id>
-            <nom></nom>
-            <prenom></prenom>
-            <telephone>0</telephone>
-            <role>EMPLOYE</role>
-            <disponible>false</disponible>
-        </employe>
-        <vehicle>
-            <id>1</id>
-            <capacite>0.0</capacite>
-            <disponibilite>false</disponibilite>
-            <immatriculation>TN-123-AB</immatriculation>
-        </vehicle>
-        <pointsCollecte>
-            <id>3</id>
-            <localisation>789 High Street, Industrial Zone</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <pointsCollecte>
-            <id>4</id>
-            <localisation>321 Park Boulevard, Residential Area</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <pointsCollecte>
-            <id>5</id>
-            <localisation>555 Market Square, City Center</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <pointsCollecte>
-            <id>6</id>
-            <localisation>999 Riverside Drive, Waterfront</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <pointsCollecte>
-            <id>7</id>
-            <localisation>777 Business District, Financial Center</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <pointsCollecte>
-            <id>8</id>
-            <localisation>111 University Campus, Education Zone</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <pointsCollecte>
-            <id>9</id>
-            <localisation>222 Shopping Mall, Commercial Area</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <heureDebut>06:15</heureDebut>
-        <heureFin></heureFin>
-        <distanceKm>37.7</distanceKm>
-    </tournee>
-    <tournee>
-        <id>8</id>
-        <datePlanifiee>2025-12-10T01:00:00+01:00</datePlanifiee>
-        <statut>PLANIFIEE</statut>
-        <employe>
-            <id>0</id>
-            <nom></nom>
-            <prenom></prenom>
-            <telephone>0</telephone>
-            <role>EMPLOYE</role>
-            <disponible>false</disponible>
-        </employe>
-        <vehicle>
-            <id>1</id>
-            <capacite>0.0</capacite>
-            <disponibilite>false</disponibilite>
-            <immatriculation>TN-123-AB</immatriculation>
-        </vehicle>
-        <pointsCollecte>
-            <id>3</id>
-            <localisation>789 High Street, Industrial Zone</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <pointsCollecte>
-            <id>4</id>
-            <localisation>321 Park Boulevard, Residential Area</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <pointsCollecte>
-            <id>5</id>
-            <localisation>555 Market Square, City Center</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <pointsCollecte>
-            <id>6</id>
-            <localisation>999 Riverside Drive, Waterfront</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <pointsCollecte>
-            <id>7</id>
-            <localisation>777 Business District, Financial Center</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <pointsCollecte>
-            <id>8</id>
-            <localisation>111 University Campus, Education Zone</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <pointsCollecte>
-            <id>9</id>
-            <localisation>222 Shopping Mall, Commercial Area</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <heureDebut>06:15</heureDebut>
-        <heureFin></heureFin>
-        <distanceKm>37.7</distanceKm>
-    </tournee>
-    <tournee>
-        <id>1</id>
-        <statut>EN_COURS</statut>
-        <distanceKm>0.0</distanceKm>
-    </tournee>
-    <tournee>
-        <id>3</id>
-        <statut>EN_COURS</statut>
-        <distanceKm>0.0</distanceKm>
-    </tournee>
-    <tournee>
         <id>9</id>
         <datePlanifiee>2025-12-10T01:00:00+01:00</datePlanifiee>
         <statut>PLANIFIEE</statut>
@@ -283,6 +17,9 @@
             <capacite>0.0</capacite>
             <disponibilite>false</disponibilite>
             <immatriculation>TN-123-AB</immatriculation>
+            <typeVehicule>Camion</typeVehicule>
+            <statut>EN_REPARATION</statut>
+            <etat>EN_REPARATION</etat>
         </vehicle>
         <pointsCollecte>
             <id>1</id>
@@ -295,106 +32,6 @@
         <heureDebut>18:00</heureDebut>
         <heureFin></heureFin>
         <distanceKm>15.5</distanceKm>
-    </tournee>
-    <tournee>
-        <id>10</id>
-        <datePlanifiee>2025-12-11T01:00:00+01:00</datePlanifiee>
-        <statut>TERMINEE</statut>
-        <employe>
-            <id>5</id>
-            <nom>abc</nom>
-            <prenom>abc</prenom>
-            <telephone>0</telephone>
-            <role>EMPLOYE</role>
-            <disponible>false</disponible>
-        </employe>
-        <vehicle>
-            <id>1</id>
-            <capacite>0.0</capacite>
-            <disponibilite>false</disponibilite>
-            <immatriculation>TN-123-AB</immatriculation>
-        </vehicle>
-        <pointsCollecte>
-            <id>2</id>
-            <localisation>456 Oak Avenue, Downtown</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <heureDebut>01:56</heureDebut>
-        <heureFin></heureFin>
-        <distanceKm>15.5</distanceKm>
-    </tournee>
-    <tournee>
-        <id>11</id>
-        <datePlanifiee>2025-12-11T01:00:00+01:00</datePlanifiee>
-        <statut>PLANIFIEE</statut>
-        <employe>
-            <id>5</id>
-            <nom>abc</nom>
-            <prenom>abc</prenom>
-            <telephone>0</telephone>
-            <role>EMPLOYE</role>
-            <disponible>false</disponible>
-        </employe>
-        <vehicle>
-            <id>1</id>
-            <capacite>0.0</capacite>
-            <disponibilite>false</disponibilite>
-            <immatriculation>TN-123-AB</immatriculation>
-        </vehicle>
-        <pointsCollecte>
-            <id>3</id>
-            <localisation>789 High Street, Industrial Zone</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <pointsCollecte>
-            <id>4</id>
-            <localisation>321 Park Boulevard, Residential Area</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <pointsCollecte>
-            <id>5</id>
-            <localisation>555 Market Square, City Center</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <pointsCollecte>
-            <id>6</id>
-            <localisation>999 Riverside Drive, Waterfront</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <pointsCollecte>
-            <id>7</id>
-            <localisation>777 Business District, Financial Center</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <pointsCollecte>
-            <id>8</id>
-            <localisation>111 University Campus, Education Zone</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <heureDebut>06:15</heureDebut>
-        <heureFin></heureFin>
-        <distanceKm>33.6</distanceKm>
     </tournee>
     <tournee>
         <id>13</id>
@@ -413,6 +50,9 @@
             <capacite>0.0</capacite>
             <disponibilite>false</disponibilite>
             <immatriculation>125TN125</immatriculation>
+            <typeVehicule>truck</typeVehicule>
+            <statut>EN_PANNE</statut>
+            <etat>EN_PANNE</etat>
         </vehicle>
         <pointsCollecte>
             <id>1</id>
@@ -443,6 +83,9 @@
             <capacite>0.0</capacite>
             <disponibilite>false</disponibilite>
             <immatriculation>TN-456-CD</immatriculation>
+            <typeVehicule>Benne</typeVehicule>
+            <statut>EN_REPARATION</statut>
+            <etat>EN_REPARATION</etat>
         </vehicle>
         <pointsCollecte>
             <id>2</id>
@@ -455,76 +98,6 @@
         <heureDebut>22:32</heureDebut>
         <heureFin></heureFin>
         <distanceKm>15.5</distanceKm>
-    </tournee>
-    <tournee>
-        <id>12</id>
-        <datePlanifiee>2025-12-11T01:00:00+01:00</datePlanifiee>
-        <statut>TERMINEE</statut>
-        <employe>
-            <id>6</id>
-            <nom>paso</nom>
-            <prenom>maso</prenom>
-            <telephone>0</telephone>
-            <role>EMPLOYE</role>
-            <disponible>false</disponible>
-        </employe>
-        <vehicle>
-            <id>1</id>
-            <capacite>0.0</capacite>
-            <disponibilite>false</disponibilite>
-            <immatriculation>TN-123-AB</immatriculation>
-        </vehicle>
-        <pointsCollecte>
-            <id>4</id>
-            <localisation>321 Park Boulevard, Residential Area</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <pointsCollecte>
-            <id>5</id>
-            <localisation>555 Market Square, City Center</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <pointsCollecte>
-            <id>6</id>
-            <localisation>999 Riverside Drive, Waterfront</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <pointsCollecte>
-            <id>7</id>
-            <localisation>777 Business District, Financial Center</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <pointsCollecte>
-            <id>8</id>
-            <localisation>111 University Campus, Education Zone</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <pointsCollecte>
-            <id>3</id>
-            <localisation>154 Industrial zone, sfax</localisation>
-            <niveauRemplissage>0.0</niveauRemplissage>
-            <latitude>0.0</latitude>
-            <longitude>0.0</longitude>
-            <capacite>0</capacite>
-        </pointsCollecte>
-        <heureDebut>06:15</heureDebut>
-        <heureFin></heureFin>
-        <distanceKm>33.6</distanceKm>
     </tournee>
     <tournee>
         <id>17</id>
@@ -543,6 +116,9 @@
             <capacite>0.0</capacite>
             <disponibilite>false</disponibilite>
             <immatriculation>TN-456-CD</immatriculation>
+            <typeVehicule>Benne</typeVehicule>
+            <statut>EN_REPARATION</statut>
+            <etat>EN_REPARATION</etat>
         </vehicle>
         <pointsCollecte>
             <id>4</id>

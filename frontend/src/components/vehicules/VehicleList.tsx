@@ -8,7 +8,7 @@ import { Plus, Search, Download, Upload } from 'lucide-react';
 import { Vehicule } from '../../types/waste';
 
 const VehicleList: React.FC = () => {
-  const { vehicules, addVehicule, updateVehicule, removeVehicule, fetchVehicules, exportVehiculesXML } = useWasteStore();
+  const { vehicules, addVehicule, updateVehicule, removeVehicule, fetchVehicules, exportVehiculesXML, importVehiculesXML } = useWasteStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingVehicule, setEditingVehicule] = useState<Vehicule | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
@@ -53,19 +53,16 @@ const VehicleList: React.FC = () => {
               type="file"
               accept=".xml"
               className="hidden"
-              onChange={(e) => {
+              onChange={async (e) => {
                 const file = e.target.files?.[0];
                 if (!file) return;
-
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                  const xmlString = ev.target?.result as string;
-                  // Tu peux connecter un parseur plus tard, ou utiliser importVehiculesXML(xmlString)
-                  alert('Import véhicules – fonction à connecter au parseur');
-                  console.log('XML importé :', xmlString);
-                };
-                reader.onerror = () => alert('Erreur de lecture du fichier');
-                reader.readAsText(file);
+                try {
+                  await importVehiculesXML(file);
+                  await fetchVehicules(); // Refresh after import
+                } catch (error) {
+                  console.error('Failed to import vehicles:', error);
+                }
+                e.target.value = '';
               }}
             />
             <div className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium shadow-sm">

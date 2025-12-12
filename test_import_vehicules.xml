@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<vehicules>
+    <vehicule>
+        <id>100</id>
+        <typeVehicule>Camion Compact</typeVehicule>
+        <capacite>2000.0</capacite>
+        <disponibilite>true</disponibilite>
+        <immatriculation>TN-TEST-001</immatriculation>
+        <statut>DISPONIBLE</statut>
+        <etat>BON_ETAT</etat>
+        <conducteur>
+            <id>1</id>
+            <nom>Test</nom>
+            <prenom>Driver</prenom>
+        </conducteur>
+    </vehicule>
+    <vehicule>
+        <id>101</id>
+        <typeVehicule>Benne Moyenne</typeVehicule>
+        <capacite>2500.0</capacite>
+        <disponibilite>true</disponibilite>
+        <immatriculation>TN-TEST-002</immatriculation>
+        <statut>DISPONIBLE</statut>
+        <etat>BON_ETAT</etat>
+    </vehicule>
+    <vehicule>
+        <id>102</id>
+        <typeVehicule>Camion Grande Capacité</typeVehicule>
+        <capacite>6000.0</capacite>
+        <disponibilite>false</disponibilite>
+        <immatriculation>TN-TEST-003</immatriculation>
+        <statut>EN_REPARATION</statut>
+        <etat>EN_REPARATION</etat>
+    </vehicule>
+</vehicules>
+
